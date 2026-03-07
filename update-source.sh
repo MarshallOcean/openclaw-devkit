@@ -8,6 +8,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_DIR="${SCRIPT_DIR}/.openclaw_src"
 REPO="openclaw/openclaw"
 
+# 临时文件跟踪 (用于 trap 清理)
+TMP_FILE=""
+TMP_DIR=""
+
 # 颜色输出
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,6 +21,13 @@ NC='\033[0m'
 info() { echo -e "${GREEN}==>${NC} $*" >&2; }
 warn() { echo -e "${YELLOW}WARNING:${NC} $*" >&2; }
 error() { echo -e "${RED}ERROR:${NC} $*" >&2; exit 1; }
+
+# 清理临时文件
+cleanup() {
+  [[ -n "$TMP_FILE" && -f "$TMP_FILE" ]] && rm -f "$TMP_FILE"
+  [[ -n "$TMP_DIR" && -d "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
+}
+trap cleanup EXIT INT TERM
 
 # 获取最新 release 版本
 get_latest_version() {
