@@ -124,7 +124,7 @@ build_image() {
     -t "${IMAGE_NAME}:${version}" \
     -t "${IMAGE_NAME}:latest" \
     -f "${SCRIPT_DIR}/Dockerfile.dev" \
-    "${proxy_args[@]}" \
+    ${proxy_args[@]+"${proxy_args[@]}"} \
     "${SRC_DIR}"; then
     error "构建镜像失败"
   fi
