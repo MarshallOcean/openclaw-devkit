@@ -83,13 +83,32 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # ============================================================
 
 # Bun (TypeScript 运行时，比 Node 更快)
+# 从 GitHub releases 下载，使用代理加速
+ARG BUN_VERSION=1.2.19
+ARG GITHUB_PROXY=https://mirror.ghproxy.com
+RUN arch=$(uname -m) && \
+    case "$arch" in \
+    aarch64|arm64) bun_arch="aarch64" ;; \
+    x86_64|amd64) bun_arch="x64" ;; \
+    *) echo "Unsupported architecture: $arch" && exit 1 ;; \
+    esac && \
+    BUN_URL="https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-${bun_arch}.zip" && \
+    curl -fsSL "${GITHUB_PROXY}/${BUN_URL}" -o /tmp/bun.zip || \
+    curl -fsSL "${BUN_URL}" -o /tmp/bun.zip && \
+    unzip /tmp/bun.zip -d /tmp && \
+    mkdir -p /opt/bun/bin && \
+    mv /tmp/bun-linux-${bun_arch}/bun /opt/bun/bin/bun && \
+    chmod +x /opt/bun/bin/bun && \
+    rm -rf /tmp/bun.zip /tmp/bun-linux-${bun_arch} && \
+    ln -sf /opt/bun/bin/bun /usr/local/bin/bun && \
+    /opt/bun/bin/bun --version
 ENV BUN_INSTALL=/opt/bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
-RUN curl -fsSL https://bun.sh/install | bash && \
-  ln -sf "${BUN_INSTALL}/bin/bun" /usr/local/bin/bun
 
 # pnpm (Node 包管理器)
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 配置 npm 使用国内镜像并直接安装 pnpm (绕过 corepack 网络问题)
+ENV npm_config_registry=https://registry.npmmirror.com
+RUN npm install -g pnpm@10.23.0
 
 # Playwright CLI (浏览器自动化命令行工具)
 RUN npm install -g @playwright/test@latest
