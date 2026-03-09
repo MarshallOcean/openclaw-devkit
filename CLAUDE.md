@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-OpenClaw 开发工具箱套件 - 为 [OpenClaw](https://github.com/openclaw/openclaw) 多通道 AI 生产力工具提供完整的容器化开发环境。集成开发、调试、测试于一体的工具链，助力快速迭代和部署。
+openclaw-devkit 开发工具箱套件 - 为 [OpenClaw](https://github.com/openclaw/openclaw) 多通道 AI 生产力工具提供完整的容器化开发环境。集成开发、调试、测试于一体的工具链，助力快速迭代和部署。
 
 ## Architecture
 
 ```
-openclaw/
+openclaw-devkit/
 ├── Makefile                # Docker 运维命令入口
 ├── docker-compose.dev.yml  # Docker Compose 配置
 ├── Dockerfile.dev          # 开发环境镜像定义
@@ -56,11 +56,11 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 
 ## Key Services
 
-| Service | Port | Description |
-|--------|------|-------------|
+| Service          | Port  | Description                     |
+| ---------------- | ----- | ------------------------------- |
 | openclaw-gateway | 18789 | 主网关服务 (Web UI + WebSocket) |
-| HTTP Proxy | 7897 | 代理服务 (访问外网) |
-| Claude API Proxy | 15721 | Claude API 代理 |
+| HTTP Proxy       | 7897  | 代理服务 (访问外网)             |
+| Claude API Proxy | 15721 | Claude API 代理                 |
 
 ## Configuration
 
@@ -110,3 +110,31 @@ GITHUB_TOKEN=xxx
 - 使用 `make exec CMD="openclaw config list"` 查看 OpenClaw 配置
 - Gateway 日志位于容器内 `/tmp/openclaw-gateway.log`
 - 进入容器后可直接运行 `openclaw` 命令
+
+## Dockerfile Development
+
+### Version Verification
+Before using specific versions in Dockerfile, verify download URLs exist:
+```bash
+# Check if URL returns 200
+curl -fsSL -o /dev/null -w "%{http_code}" "https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-arm64.tar.xz"
+```
+
+### Syntax Validation
+```bash
+docker build --check -f Dockerfile.dev .  # Validate without full build
+```
+
+### Current Stable Versions (2025)
+- Node.js: 22.x LTS (24.x not yet released)
+- Go: 1.26.x (1.27.x not yet released)
+- golangci-lint: 1.64.x
+
+### Download Source Alternatives
+- Spring Boot CLI: Use `repo1.maven.org` (repo.spring.io requires auth)
+  - `https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-cli/${VER}/spring-boot-cli-${VER}-bin.tar.gz`
+
+### Common Issues to Avoid
+- Duplicate ARG/ENV declarations (causes warnings)
+- Duplicate ENV variable settings (GOPATH set twice)
+- Using non-existent version numbers
