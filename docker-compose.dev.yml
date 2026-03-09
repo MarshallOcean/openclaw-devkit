@@ -115,7 +115,7 @@ services:
     command:
       - "sh"
       - "-c"
-      - "cp -rn /home/node/.openclaw-seed/* /home/node/.openclaw/ 2>/dev/null || true && chown -R node:node /home/node/.openclaw && node dist/index.js config set gateway.controlUi.allowedOrigins '[\"http://127.0.0.1:18789\"]' --strict-json && node dist/index.js gateway --bind lan --port 18789"
+      - "cp -rn /home/node/.openclaw-seed/* /home/node/.openclaw/ 2>/dev/null || true && chown -R node:node /home/node/.openclaw && openclaw config set gateway.controlUi.allowedOrigins '[\"http://127.0.0.1:18789\"]' --strict-json && openclaw gateway --bind lan --port 18789"
     healthcheck: &common-healthcheck
       test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 30s

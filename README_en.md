@@ -98,18 +98,32 @@ To achieve an "out-of-the-box" experience, this project establishes a self-consi
 
 ---
 
-## 💬 Slack App Configuration
+## 🤖 Slack Integration Guide
 
-To enable Slack interaction, please configure your Slack App as follows:
+To enable Slack interaction, follow these steps to configure your Slack App:
 
-1. **Create App**: Visit the [Slack API Console](https://api.slack.com/apps) and click **"Create New App"**.
-2. **Import via Manifest**: Choose **"From an app manifest"** and select your target workspace.
-3. **Copy Content**: Copy the contents of `slack-manifest.json` from the project root into the input box (ensure you select YAML/JSON as appropriate).
-4. **Enable Socket Mode**: The manifest defaults to `socket_mode_enabled: true`. Confirm **Socket Mode** is enabled in the App settings and generate an **App-level Token** (requires `connections:write` scope).
-5. **Install App**: Install the App to your workspace and obtain the **Bot User OAuth Token**.
+### 1. Quick Setup (Recommended: Using Manifest)
+1. Visit the [Slack API Console](https://api.slack.com/apps) and click **"Create New App"**.
+2. Choose **"From an app manifest"** and select your target workspace.
+3. Copy the contents of [`slack-manifest.json`](./slack-manifest.json) from the project root and paste it.
+4. Generate an **App-level Token** (`xapp-...`) under **"Settings" -> "Socket Mode"** with the `connections:write` scope.
+5. Install the app into your workspace to obtain the **Bot User OAuth Token** (`xoxb-...`).
 
-> [!IMPORTANT]
-> Ensure you fill in the obtained `SLACK_APP_TOKEN` (xapp-...) and `SLACK_BOT_TOKEN` (xoxb-...) into your `.env` file.
+### 2. Environment Configuration & Pairing
+1. Add your tokens to the `.env` file. **OpenClaw will automatically enable the Slack channel upon startup when these variables are detected.**
+2. **Execute Pairing**: Run `make pairing CMD="list slack"` to see pending pairing requests (verification codes).
+3. **Complete Pairing**: Send the code to the bot in Slack, or run `make pairing CMD="approve slack CODE"`.
+
+```bash
+SLACK_BOT_TOKEN=xoxb-your-bot-token
+# ...
+```
+
+### 3. Best Practices & Default Behavior
+- **Auto-Enable**: As long as valid tokens exist in `.env`, the channel is enabled automatically without needing `enabled: true` in `openclaw.json`.
+- **Privacy First (Default Allowlist)**: For security, channel messages default to `allowlist` mode (only responding in allowed channels). DMs default to `pairing` mode (requires running `make pairing` to approve).
+- **Use Socket Mode**: This is the default for DevKit, allowing you to receive Slack events locally without network tunneling (no static IP or ngrok required).
+- **Security Isolation**: In production, use `SLACK_PRIMARY_OWNER` to restrict access to sensitive administrative commands.
 
 ---
 
@@ -120,6 +134,10 @@ Edit the `.env` file in the project root for personalized configuration:
 | Variable Name           | Description                     | Example Value                      |
 | :---------------------- | :------------------------------ | :--------------------------------- |
 | `OPENCLAW_CONFIG_DIR`   | Host configuration storage path | `~/.openclaw`                      |
+| `OPENCLAW_IMAGE`        | Image variant (dev / dev-java)  | `openclaw:dev`                     |
+| `SLACK_BOT_TOKEN`       | Slack Bot Token (xoxb)          | `xoxb-xxxx...`                     |
+| `SLACK_APP_TOKEN`       | Slack App Token (xapp)          | `xapp-xxxx...`                     |
+| `SLACK_PRIMARY_OWNER`   | Slack Primary Owner ID          | `U01234567`                        |
 | `OPENCLAW_GATEWAY_PORT` | Gateway access port             | `18789`                            |
 | `HTTP_PROXY`            | Proxy for container internet    | `http://host.docker.internal:7897` |
 | `GITHUB_TOKEN`          | Token for `make update`         | `your_github_token`                |
@@ -128,24 +146,25 @@ Edit the `.env` file in the project root for personalized configuration:
 
 ## 🛠️ Maintenance Command Manual
 
-| Category         | Command               | Description                                        |
-| :--------------- | :-------------------- | :------------------------------------------------- |
-| **Lifecycle**    | `make up / down`      | Start / Stop services                              |
-|                  | `make restart`        | Restart all services                               |
-|                  | `make status`         | View container status and access URLs              |
-| **Build/Update** | `make build`          | Build standard image (Dockerfile.dev)              |
-|                  | `make build-java`     | Build Java enhanced image (Dockerfile.java)        |
-|                  | `make rebuild`        | Rebuild standard image and restart services        |
-|                  | `make rebuild-java`   | Rebuild Java image and restart services            |
-|                  | `make update`         | Fetch latest OpenClaw source from GitHub           |
-| **Debug/Diag**   | `make logs`           | Trace Gateway primary service logs                 |
-|                  | `make shell`          | Enter container shell (bash)                       |
-|                  | `make test-proxy`     | Test connectivity to Google/Claude APIs            |
-|                  | `make gateway-health` | Check gateway response status                      |
-| **Backup**       | `make backup-config`  | Backup agents and config to `~/.openclaw-backups`  |
-|                  | `make restore-config` | Interactively restore specific config files        |
-| **Cleanup**      | `make clean`          | Clean up orphan containers and dangling images     |
-|                  | `make clean-volumes`  | **WARNING**: Wipe all cache and persistent volumes |
+| Category         | Command               | Description                                                 |
+| :--------------- | :-------------------- | :---------------------------------------------------------- |
+| **Lifecycle**    | `make up / down`      | Start / Stop services                                       |
+|                  | `make restart`        | Restart all services                                        |
+|                  | `make status`         | View container status and access URLs                       |
+| **Build/Update** | `make build`          | Build standard image (Dockerfile.dev)                       |
+|                  | `make build-java`     | Build Java enhanced image (Dockerfile.java)                 |
+|                  | `make rebuild`        | Rebuild standard image and restart services                 |
+|                  | `make rebuild-java`   | Rebuild Java image and restart services                     |
+|                  | `make update`         | Fetch latest OpenClaw source from GitHub                    |
+| **Diagnosis**    | `make logs`           | Follow Gateway service logs.                                |
+|                  | `make shell`          | Enter container shell (bash).                               |
+|                  | `make pairing`        | **Channel Pairing** (e.g., `make pairing CMD="list slack"`) |
+|                  | `make test-proxy`     | **One-click test** for Google/Claude API.                   |
+|                  | `make gateway-health` | Check gateway response status                               |
+| **Backup**       | `make backup-config`  | Backup agents and config to `~/.openclaw-backups`           |
+|                  | `make restore-config` | Interactively restore specific config files                 |
+| **Cleanup**      | `make clean`          | Clean up orphan containers and dangling images              |
+|                  | `make clean-volumes`  | **WARNING**: Wipe all cache and persistent volumes          |
 
 ---
 

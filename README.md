@@ -99,18 +99,32 @@ make rebuild-java
 
 ---
 
-## 💬 Slack App 配置
+## 🤖 Slack 集成指引
 
 为了启用 Slack 交互功能，请按照以下步骤配置您的 Slack App：
 
-1. **创建 App**: 访问 [Slack API 控制台](https://api.slack.com/apps)，点击 **"Create New App"**。
-2. **使用清单 (Manifest) 导入**: 选择 **"From an app manifest"**，选择目标工作区。
-3. **复制内容**: 将项目根目录下的 `slack-manifest.json` 内容复制到输入框中（确保版本选择 YAML/JSON 对应）。
-4. **启用 Socket Mode**: 清单已默认配置 `socket_mode_enabled: true`。在 App 配置界面确认 **Socket Mode** 已开启并生成 **App-level Token** (需要 `connections:write` 权限)。
-5. **安装 App**: 将 App 安装到您的工作区，并获取 **Bot User OAuth Token**。
+### 1. 快速配置 (推荐使用 Manifest)
+1. 访问 [Slack API 控制台](https://api.slack.com/apps)，点击 **"Create New App"**。
+2. 选择 **"From an app manifest"**，选择目标工作区。
+3. 复制项目根目录下的 [`slack-manifest.json`](./slack-manifest.json) 内容并粘贴。
+4. 在 **"Settings" -> "Socket Mode"** 界面生成一个包含 `connections:write` 权限的 **App-level Token** (`xapp-...`)。
+5. 将 App 安装到您的工作区，获取 **Bot User OAuth Token** (`xoxb-...`)。
 
-> [!IMPORTANT]
-> 确保将获取到的 `SLACK_APP_TOKEN` (xapp-...) 和 `SLACK_BOT_TOKEN` (xoxb-...) 填入您的 `.env` 文件中。
+### 2. 环境变量设置与配对
+1. 将获取的令牌填入项目根目录的 `.env` 文件中。**一旦检测到这些变量，OpenClaw 将在启动时自动启用 Slack 频道。**
+2. **执行配对**: 运行 `make pairing CMD="list slack"` 查看待处理的配对请求（验证码）。
+3. **完成配对**: 在 Slack 中向机器人发送验证码，或运行 `make pairing CMD="approve slack 验证码"`。
+
+```bash
+SLACK_BOT_TOKEN=xoxb-your-bot-token
+# ...
+```
+
+### 3. 最佳实践与默认行为
+- **自动启用**: 只要 `.env` 中存在有效令牌，无需额外在 `openclaw.json` 中配置 `enabled: true`。
+- **隐私保护 (默认为 Allowlist)**: 为了安全，频道消息默认处于 `allowlist` 模式（仅响应允许的频道）。私聊 (DM) 默认处于 `pairing` 模式（需要运行 `make pairing` 进行配对）。
+- **使用 Socket Mode**: 这是 DevKit 的默认模式，允许在本地开发环境直接接收 Slack 事件，无需配置公网 IP 或内网穿透（如 ngrok）。
+- **安全性隔离**: 在生产环境下，务必设置 `SLACK_PRIMARY_OWNER` 以限制高权限管理指令的调用者。
 
 ---
 
@@ -121,6 +135,10 @@ make rebuild-java
 | 变量名                  | 说明                            | 示例值                             |
 | :---------------------- | :------------------------------ | :--------------------------------- |
 | `OPENCLAW_CONFIG_DIR`   | 宿主机配置存储路径              | `~/.openclaw`                      |
+| `OPENCLAW_IMAGE`        | 镜像版本 (dev / dev-java)       | `openclaw:dev`                     |
+| `SLACK_BOT_TOKEN`       | Slack Bot 令牌 (xoxb)           | `xoxb-xxxx...`                     |
+| `SLACK_APP_TOKEN`       | Slack App 令牌 (xapp)           | `xapp-xxxx...`                     |
+| `SLACK_PRIMARY_OWNER`   | Slack 主要管理员 ID             | `U01234567`                        |
 | `OPENCLAW_GATEWAY_PORT` | Gateway 访问端口                | `18789`                            |
 | `HTTP_PROXY`            | 容器访问外网用的代理            | `http://host.docker.internal:7897` |
 | `GITHUB_TOKEN`          | 用于 `make update` 自动拉取源码 | `your_github_token`                |
@@ -141,6 +159,7 @@ make rebuild-java
 |              | `make update`         | 从 GitHub Release 获取最新 OpenClaw 源码          |
 | **调试诊断** | `make logs`           | 追踪 Gateway 主服务日志                           |
 |              | `make shell`          | 进入容器内部交互环境 (bash)                       |
+|              | `make pairing`        | **频道配对** (如 `make pairing CMD="list slack"`) |
 |              | `make test-proxy`     | **一键测试** Google/Claude API 连通性             |
 |              | `make gateway-health` | 检查网关响应状态                                  |
 | **备份恢复** | `make backup-config`  | 备份所有 Agent 及全局配置到 `~/.openclaw-backups` |

@@ -12,7 +12,7 @@
 
 .PHONY: help install up down logs shell status \
         build build-java rebuild clean clean-volumes \
-        exec cli gateway-health test-proxy verify \
+        exec cli pairing gateway-health test-proxy verify \
         backup-config restore-config \
         update check-deps
 
@@ -30,6 +30,7 @@ ifeq ($(IMAGE_NAME),)
 IMAGE_NAME := openclaw:dev
 endif
 GATEWAY_PORT := 18789
+OPENCLAW_BIN := openclaw
 
 # ============================================================
 # 帮助
@@ -43,19 +44,19 @@ help: ## 显示帮助信息
 	@echo "用法: make <target>"
 	@echo ""
 	@echo "┌─ 生命周期管理 ─────────────────────────────────────────────┐"
-	@grep -E '^(install|up|down|status):.*## .*$$' $(MAKEFILE_LIST) | \
+	@grep -h -E '^(install|up|down|status):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "├─ 构建与清理 ───────────────────────────────────────────────┤"
-	@grep -E '^(build|build-java|rebuild|rebuild-java|clean):.*## .*$$' $(MAKEFILE_LIST) | \
+	@grep -h -E '^(build|build-java|rebuild|rebuild-java|clean):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "├─ 调试与诊断 ───────────────────────────────────────────────┤"
-	@grep -E '^(logs|shell|exec|gateway-health|test-proxy):.*## .*$$' $(MAKEFILE_LIST) | \
+	@grep -h -E '^(logs|shell|exec|cli|pairing|gateway-health|test-proxy):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "├─ 备份与恢复 ───────────────────────────────────────────────┤"
-	@grep -E '^(backup-config|restore-config):.*## .*$$' $(MAKEFILE_LIST) | \
+	@grep -h -E '^(backup-config|restore-config):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "├─ 维护 ─────────────────────────────────────────────────────┤"
-	@grep -E '^(update|check-deps):.*## .*$$' $(MAKEFILE_LIST) | \
+	@grep -h -E '^(update|check-deps):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "└─────────────────────────────────────────────────────────────┘"
 	@echo ""
@@ -177,11 +178,14 @@ verify: ## 验证镜像工具版本 (2025 最佳实践检查)
 		docker run --rm openclaw:dev-java java -version 2>&1 | grep -q "25" && echo "✓ JDK 25 (LTS) OK" || echo "✗ JDK version mismatch"; \
 	fi
 
-exec: ## 执行命令 (用法: make exec CMD="node dist/index.js --help")
+exec: ## 执行命令 (用法: make exec CMD="openclaw --help")
 	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway $(CMD)
 
 cli: ## 执行 OpenClaw CLI 命令 (用法: make cli CMD="config list")
-	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway node dist/index.js $(CMD)
+	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway $(OPENCLAW_BIN) $(CMD)
+
+pairing: ## 频道配对指令 (用法: make pairing CMD="list slack")
+	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway $(OPENCLAW_BIN) pairing $(CMD)
 
 gateway-health: ## 检查 Gateway 健康状态
 	@echo "==> 检查 Gateway 健康状态..."
