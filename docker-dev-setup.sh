@@ -357,6 +357,16 @@ export OPENCLAW_GATEWAY_TOKEN
 # ============================================================
 
 echo "==> 构建开发环境镜像: $IMAGE_NAME"
+if [[ ! -f "$ROOT_DIR/.openclaw_src/package.json" ]]; then
+  echo ""
+  echo "❌ 错误: 在 .openclaw_src 目录中未找到项目源码 (package.json)。"
+  echo "提示: 如果您是首次克隆本项目，请先运行以下命令拉取源码："
+  echo ""
+  echo "    make update"
+  echo ""
+  exit 1
+fi
+
 docker build \
   -t "$IMAGE_NAME" \
   -f "$ROOT_DIR/Dockerfile.dev" \
@@ -419,7 +429,7 @@ echo "已更新: $ENV_FILE"
 # ============================================================
 
 echo ""
-echo "==> 修复数据目录权限"
+# 修复数据目录权限
 # Use -xdev to restrict chown to the config-dir mount only
 # 使用 root 用户修复权限，但限制在 .openclaw 目录内
 docker compose -f "$DEV_COMPOSE_FILE" run --rm --user root --entrypoint sh openclaw-cli -c \

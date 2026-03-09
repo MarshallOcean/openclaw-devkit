@@ -156,10 +156,10 @@ logs-all: ## 查看所有容器日志
 shell: ## 进入 Gateway 容器
 	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway bash
 
-verify: ## 验证镜像工具版本 (2026 最佳实践检查)
+verify: ## 验证镜像工具版本 (2025 最佳实践检查)
 	@echo "==> 验证标准版镜像: $(IMAGE_NAME)"
-	docker run --rm $(IMAGE_NAME) node -v | grep -q "v24" && echo "✓ Node.js v24 (LTS) OK" || echo "✗ Node.js version mismatch"
-	docker run --rm $(IMAGE_NAME) go version | grep -q "1.27" && echo "✓ Go v1.27 OK" || echo "✗ Go version mismatch"
+	docker run --rm $(IMAGE_NAME) node -v | grep -q "v22" && echo "✓ Node.js v22 (LTS) OK" || echo "✗ Node.js version mismatch"
+	docker run --rm $(IMAGE_NAME) go version | grep -q "1.26" && echo "✓ Go v1.26 OK" || echo "✗ Go version mismatch"
 	@if docker image inspect openclaw:dev-java >/dev/null 2>&1; then \
 		echo "==> 验证 Java 增强版镜像: openclaw:dev-java"; \
 		docker run --rm openclaw:dev-java java -version 2>&1 | grep -q "25" && echo "✓ JDK 25 (LTS) OK" || echo "✗ JDK version mismatch"; \
