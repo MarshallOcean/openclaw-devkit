@@ -15,7 +15,9 @@
 ## ✨ 核心特性
 
 - 🚀 **一键式环境搭建**：基于 Docker Compose，秒级启动完整的开发运行环境。
-- 🛠️ **全能开发栈**：镜像内置 Go 1.25, Node.js 22, pnpm, Bun, Python 以及 `gh` CLI。
+- 🛠️ **双重镜像版本选择**：
+    - **标准版 (Dockerfile.dev)**：集成 Go 1.27, Node 24, Python 3.13, pnpm, Bun, Playwright 等。
+    - **Java 增强版 (Dockerfile.java)**：在标准版基础上，深度集成 **JDK 25 (LTS)**、Google Java Format、Checkstyle、架构检查等企业级工具。
 - 🤖 **Claude Code 集成**：原生支持 Claude Code CLI，提供极致的 AI 辅助编程体验。
 - 🌐 **网络优化**：内置针对 Google API 和 Claude API 的代理转发逻辑，解决国内访问难题。
 - 🎥 **自动化能力**：预装 Playwright 及所有浏览器依赖，支持复杂的网页自动化任务。
@@ -61,15 +63,32 @@ graph TD
 
 ## 📂 目录结构
 
-| 路径                     | 说明                                         |
-| :----------------------- | :------------------------------------------- |
-| `Makefile`               | 项目运维命令的统一入口                       |
-| `docker-compose.dev.yml` | Docker Compose 服务定义                      |
-| `Dockerfile.dev`         | 开发镜像构建脚本                             |
-| `.openclaw_src/`         | OpenClaw 核心源码 (git submodule 或本地目录) |
-| `docker-dev-setup.sh`    | 首次运行的初始化脚本                         |
-| `update-source.sh`       | 从 GitHub 发布页面自动更新源码的工具         |
-| `.env`                   | 环境变量配置 (git-ignored)                   |
+| 路径                         | 分类         | 详细用途说明                                                                                                              |
+| :--------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------------ |
+| **`Makefile`**               | 🔧 运维入口   | **核心指令集**：统一管理容器生命周期、源码更新、健康检查及配置备份。开发者只需通过 `make <cmd>` 即可完成 90% 的日常操作。 |
+| **`docker-compose.dev.yml`** | 🐳 服务编排   | **开发环境定义**：声明了 Gateway、CLI 以及网络代理服务，配置了复杂的 Named Volumes 实现数据持久化与跨容器共享。           |
+| **`Dockerfile.dev`**         | 🏗️ 镜像构建   | **标准开发版**：集成 Go, Node, Python, Playwright 等核心工具，是 DevKit 的默认运行基石。                                  |
+| **`Dockerfile.java`**        | ☕ 镜像构建   | **Java 增强版**：在标准版基础上，额外集成 JDK 25 LTS, Gradle, Maven 及 Java 质量审计工具。                                |
+| **`.openclaw_src/`**         | 📦 核心源码   | **OpenClaw 主程序**：存放自动化引擎的源代码。支持通过 `make update` 自动同步远程 Release 或手动进行本地开发调试。         |
+| **`docker-dev-setup.sh`**    | 🚀 初始化脚本 | **一键启动逻辑**：处理复杂的宿主机权限修复、网络环境预检、.env 自动生成以及镜像的并行构建流程。                           |
+| **`update-source.sh`**       | 🔄 同步工具   | **源码热拉取**：由 Makefile 调用，通过 GitHub API 自动对比版本并拉取最新的 OpenClaw 发布包，无需手动下载。                |
+| **`.env` (.example)**        | 🔑 配置中心   | **环境秘钥**：存储代理地址、API Token、宿主机路径映射等敏感配置。项目内置了 `.env.example` 作为模板。                     |
+| **`docs/`**                  | 📚 资源文档   | **项目资产**：存放架构图 (architecture.svg)、设计手稿以及相关的技术规范文档。                                             |
+| **`CLAUDE.md`**              | 🤖 AI 上下文  | **智能体指南**：为 AI 助手（如 Claude）提供针对该项目的开发规范、指令解析及架构上下文建议。                               |
+| **`~/.openclaw`**            | 📂 宿主机挂载 | **持久化配置**：(默认路径) 存储容器输出的日志、下载的文件、Agent 配置以及用户定义的自动化工作流。                         |
+| **`.gitignore`**             | 🙈 忽略列表   | **版本控制过滤**：防止 `.env`、`node_modules` 及本地缓存被提交到远程仓库。                                                |
+
+---
+
+## 🔁 核心工作流与文件协作
+
+为了实现「开箱即用」的体验，本项目内部建立了自洽的文件协作体系：
+
+1. **入口层 (`Makefile`)**：作为用户执行操作的唯一终端界面，它封装了复杂的 Docker 指令，隐藏了环境交互的复杂性。
+2. **初始化层 (`docker-dev-setup.sh`)**：由 `make install` 触发。它负责读取 `.env` 配置、预创建宿主机目录树、处理权限修复，并调用 `Dockerfile.dev` 构建定制化的开发镜像。
+3. **编排层 (`docker-compose.dev.yml`)**：核心调度中心。它定义了容器间的网络抽象、环境变量注入、以及如何利用 Named Volumes 实现高效的 `node_modules` 缓存。
+4. **运行层 (`Dockerfile.dev`)**：环境的物理定义。它将 Node.js, Go, Python 和 Playwright 整合进一个统一的容器，消除了「在我的机器上能运行」的经典悖论。
+5. **维护层 (`update-source.sh`)**：自动化更新机制。它通过 GitHub API 监控版本变化，实现一键式的源码热更新与旧镜像清理。
 
 ---
 

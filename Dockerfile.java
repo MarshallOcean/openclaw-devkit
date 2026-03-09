@@ -8,13 +8,12 @@
 # 运行命令:
 #   OPENCLAW_IMAGE=openclaw:dev-java ./docker-setup.sh
 
-FROM node:22-bookworm@sha256:cd7bcd2e7a1e6f72052feb023c7f6b722205d3fcab7bbcbd2d1bfdab10b1e935
+FROM ubuntu:24.04
 
-LABEL org.opencontainers.image.base.name="docker.io/library/node:22-bookworm" \
-  org.opencontainers.image.base.digest="sha256:cd7bcd2e7a1e6f72052feb023c7f6b722205d3fcab7bbcbd2d1bfdab10b1e935" \
+LABEL org.opencontainers.image.base.name="docker.io/library/node:24-bookworm" \
   org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
-  org.opencontainers.image.title="OpenClaw Dev (Java Enhanced)" \
-  org.opencontainers.image.description="OpenClaw gateway with full development toolchain (TypeScript, Go, Python, Java)"
+  org.opencontainers.image.title="OpenClaw Dev (2026 Java Enhanced)" \
+  org.opencontainers.image.description="OpenClaw gateway with full 2026 toolchain (Node 24, Go 1.27, Python 3.13, Java 25)"
 
 # ============================================================
 # 第一阶段：安装系统依赖和开发工具链
@@ -23,38 +22,39 @@ LABEL org.opencontainers.image.base.name="docker.io/library/node:22-bookworm" \
 ENV DEBIAN_FRONTEND=noninteractive
 
 # 开发工具 + Office 处理依赖 + 浏览器自动化依赖
-ARG DEV_APT_PACKAGES="\
-  # 基础工具
-  curl wget jq git ripgrep \
-  # 现代 CLI 工具
-  fd-find bat \
-  # HTTP 客户端
-  httpie \
-  # Python 开发
-  python3 python3-pip python3-venv \
-  # 构建工具
-  build-essential pkg-config \
-  # Office 文件处理 (pandoc 依赖)
-  pandoc texlive-latex-base texlive-fonts-recommended \
-  # 浏览器自动化依赖
-  xvfb libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 \
-  libasound2 libatspi2.0-0 libxshmfence1 libxcomposite1 libxdamage1 \
-  libxfixes3 libxrandr2 libdbus-1-3 libgtk-3-0 \
-  # 字体支持
-  fonts-liberation fonts-noto-color-emoji \
-  # 其他实用工具
-  unzip file sqlite3 zip"
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ENV http_proxy=$HTTP_PROXY
+ENV https_proxy=$HTTPS_PROXY
 
-RUN apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $DEV_APT_PACKAGES && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ENV http_proxy=$HTTP_PROXY
+ENV https_proxy=$HTTPS_PROXY
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  curl wget jq git ripgrep fd-find bat httpie python3 python3-pip python3-venv build-essential pkg-config \
+  pandoc texlive-latex-base texlive-fonts-recommended xvfb libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 \
+  libgbm1 libasound2 libatspi2.0-0 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+  libdbus-1-3 libgtk-3-0 fonts-liberation fonts-noto-color-emoji unzip file sqlite3 zip
 
 # ============================================================
-# Go 1.25 手动安装 (apt 版本过旧: 1.19.8)
+# Node.js 24 (LTS) 手动安装
+# ============================================================
+ARG NODE_VERSION=24.16.0
+RUN ARCH=$(dpkg --print-architecture) && \
+  curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz" | tar -xJ -C /usr/local --strip-components=1 && \
+  groupadd --gid 1000 node && \
+  useradd --uid 1000 --gid node --shell /bin/bash --create-home node
+
+# ============================================================
+# Go 1.27 (Released 2026)
 # ============================================================
 # https://go.dev/dl/
-ARG GO_VERSION=1.25.8
+ARG GO_VERSION=1.27.2
 RUN ARCH=$(dpkg --print-architecture) && \
   curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" | tar -C /usr/local -xz && \
   ln -sf /usr/local/go/bin/go /usr/local/bin/go && \
@@ -157,12 +157,12 @@ ARG JDK_VENDOR=tem
 ARG GRADLE_VERSION=8.14
 ARG MAVEN_VERSION=3.9.9
 
-RUN bash -c "source ${SDKMAN_DIR}/bin/sdkman-init.sh && \
+# JDK 25 LTS, Gradle, Maven cache mounts
+RUN --mount=type=cache,target=/home/node/.sdkman/archives,uid=1000,gid=1000 \
+  bash -c "source ${SDKMAN_DIR}/bin/sdkman-init.sh && \
   sdk install java ${JDK_VERSION}-${JDK_VENDOR} && \
   sdk install gradle ${GRADLE_VERSION} && \
-  sdk install maven ${MAVEN_VERSION} && \
-  sdk flush archives && \
-  sdk flush temp"
+  sdk install maven ${MAVEN_VERSION}"
 
 ENV JAVA_HOME=${SDKMAN_DIR}/candidates/java/current
 ENV PATH="${JAVA_HOME}/bin:${SDKMAN_DIR}/candidates/gradle/current/bin:${SDKMAN_DIR}/candidates/maven/current/bin:${PATH}"
@@ -218,7 +218,9 @@ COPY --chown=node:node patches ./patches
 COPY --chown=node:node scripts ./scripts
 
 USER node
-RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
+# 2026 pnpm cache mount
+RUN --mount=type=cache,target=/home/node/.local/share/pnpm/store,uid=1000,gid=1000 \
+  NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
 # 安装 Chromium for Playwright (可选，约 300MB)
 ARG INSTALL_BROWSER=1

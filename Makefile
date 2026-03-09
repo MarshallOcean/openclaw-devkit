@@ -11,8 +11,8 @@
 # ==============================================================================
 
 .PHONY: help install up down logs shell status \
-        build rebuild clean clean-volumes \
-        exec cli gateway-health test-proxy \
+        build build-java rebuild clean clean-volumes \
+        exec cli gateway-health test-proxy verify \
         backup-config restore-config \
         update check-deps
 
@@ -103,12 +103,20 @@ status: ## 查看服务状态
 # 构建与清理
 # ============================================================
 
-build: ## 构建镜像 (不使用缓存)
-	@echo "==> 构建 $(IMAGE_NAME) 镜像..."
+build: ## 构建标准版镜像 (Dockerfile.dev)
+	@echo "==> 构建 $(IMAGE_NAME) (标准版)..."
 	docker build \
-		--no-cache \
 		-t $(IMAGE_NAME) \
 		-f Dockerfile.dev \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
+		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		.openclaw_src
+
+build-java: ## 构建 Java 增强版镜像 (Dockerfile.java)
+	@echo "==> 构建 openclaw:dev-java (Java 增强版)..."
+	docker build \
+		-t openclaw:dev-java \
+		-f Dockerfile.java \
 		--build-arg HTTP_PROXY=$(HTTP_PROXY) \
 		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
 		.openclaw_src
@@ -147,6 +155,15 @@ logs-all: ## 查看所有容器日志
 
 shell: ## 进入 Gateway 容器
 	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway bash
+
+verify: ## 验证镜像工具版本 (2026 最佳实践检查)
+	@echo "==> 验证标准版镜像: $(IMAGE_NAME)"
+	docker run --rm $(IMAGE_NAME) node -v | grep -q "v24" && echo "✓ Node.js v24 (LTS) OK" || echo "✗ Node.js version mismatch"
+	docker run --rm $(IMAGE_NAME) go version | grep -q "1.27" && echo "✓ Go v1.27 OK" || echo "✗ Go version mismatch"
+	@if docker image inspect openclaw:dev-java >/dev/null 2>&1; then \
+		echo "==> 验证 Java 增强版镜像: openclaw:dev-java"; \
+		docker run --rm openclaw:dev-java java -version 2>&1 | grep -q "25" && echo "✓ JDK 25 (LTS) OK" || echo "✗ JDK version mismatch"; \
+	fi
 
 exec: ## 执行命令 (用法: make exec CMD="node dist/index.js --help")
 	docker compose -f $(COMPOSE_FILE) exec openclaw-gateway $(CMD)
