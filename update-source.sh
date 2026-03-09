@@ -29,6 +29,7 @@ error() { echo -e "${RED}ERROR:${NC} $*" >&2; exit 1; }
 cleanup() {
   [[ -n "$TMP_FILE" && -f "$TMP_FILE" ]] && rm -f "$TMP_FILE"
   [[ -n "$TMP_DIR" && -d "$TMP_DIR" ]] && rm -rf "$TMP_DIR"
+  return 0  # 确保始终返回成功，避免影响脚本的最终退出码
 }
 trap cleanup EXIT INT TERM
 
