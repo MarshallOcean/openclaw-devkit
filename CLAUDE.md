@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-OpenClaw Docker 开发环境 - 为 [OpenClaw](https://github.com/openclaw/openclaw) 多通道 AI 消息网关提供容器化开发环境。
+OpenClaw 开发工具箱套件 - 为 [OpenClaw](https://github.com/openclaw/openclaw) 多通道 AI 生产力工具提供完整的容器化开发环境。集成开发、调试、测试于一体的工具链，助力快速迭代和部署。
 
 ## Architecture
 

@@ -1,6 +1,6 @@
-# OpenClaw 生产力工具运维目录
+# OpenClaw 开发工具箱套件
 
-本目录是 OpenClaw Docker 开发环境的运维目录，与源码分离。
+为 [OpenClaw](https://github.com/openclaw/openclaw) 多通道 AI 生产力工具提供完整的容器化开发环境。集成开发、调试、测试于一体的工具链，助力快速迭代和部署。
 
 ## 目录结构
 
