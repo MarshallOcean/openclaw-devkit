@@ -24,7 +24,7 @@ x-openclaw-common: &openclaw-common
     args:
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
-  image: openclaw:dev
+  image: ${OPENCLAW_IMAGE:-openclaw:dev}
   environment: &common-env
     HOST_UID: ${HOST_UID:-1000}
     # ─────────────────────────────────────────────────────────────────

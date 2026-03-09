@@ -14,6 +14,20 @@ It integrates an out-of-the-box toolchain designed to help developers quickly bu
 
 ---
 
+## ✨ Key Features
+
+- 🚀 **One-Click Environment Setup**: Based on Docker Compose, start a complete development environment in seconds.
+- 🛠️ **Dual Image Version Selection**:
+    - **Standard Edition (Dockerfile.dev)**: Integrated with Go 1.26, Node 22 LTS, Python 3.13, pnpm, Bun, Playwright, etc.
+    - **Java Enhanced Edition (Dockerfile.java)**: Deeply integrated with **JDK 25 (LTS)**, Google Java Format, Checkstyle, architectural checks, and other enterprise-grade tools on top of the standard edition.
+- 🤖 **AI Coding Assistant Integration**: Native support for **Claude Code**, **OpenCode**, and **Pi-Mono (Pi)** CLI, providing a premium AI-assisted programming experience.
+- 🌐 **Network Optimization**: Built-in proxy forwarding logic for Google and Claude APIs to ensure stability in various network environments.
+- 🎥 **Automation Capabilities**: Pre-installed Playwright and all browser dependencies, supporting complex web automation tasks.
+- 📝 **Document Processing**: Integrated Pandoc and LaTeX, supporting high-quality document format conversion and generation.
+- 💾 **Data Persistence**: Sophisticated Named Volumes ensure that `node_modules`, Go cache, and session data persist across container restarts.
+
+---
+
 ## 🚥 Quick Start (From Scratch)
 
 If you are cloning this project for the first time, follow these steps to ensure a complete environment setup:
@@ -23,6 +37,8 @@ Ensure the host machine has:
 - **Docker & Docker Compose (V2)**
 - **Make** (standard on most Unix-like systems)
 - **Network Proxy** (Optional, for accessing Claude/Google APIs in restricted environments)
+    > [!TIP]
+    > 💡 **Tip**: We recommend adding `127.0.0.1 host.docker.internal` to your host machine's `hosts` file. This allows both local and containerized development to share the same proxy configuration string (`http://host.docker.internal:port`), improving environment consistency.
 
 ### 2. Initialize Environment
 ```bash
@@ -52,19 +68,15 @@ make test-proxy
 - **Web Console**: [http://127.0.0.1:18789](http://127.0.0.1:18789)
 - **Debug Logs**: `make logs`
 
----
-
-## ✨ Key Features
-
-- 🚀 **One-Click Environment Setup**: Based on Docker Compose, start a complete development environment in seconds.
-- 🛠️ **Dual Image Version Selection**:
-    - **Standard Edition (Dockerfile.dev)**: Integrated with Go 1.26, Node 22 LTS, Python 3.13, pnpm, Bun, Playwright, etc.
-    - **Java Enhanced Edition (Dockerfile.java)**: Deeply integrated with **JDK 25 (LTS)**, Google Java Format, Checkstyle, architectural checks, and other enterprise-grade tools on top of the standard edition.
-- 🤖 **Claude Code Integration**: Native support for Claude Code CLI, providing a premium AI-assisted programming experience.
-- 🌐 **Network Optimization**: Built-in proxy forwarding logic for Google and Claude APIs to ensure stability in various network environments.
-- 🎥 **Automation Capabilities**: Pre-installed Playwright and all browser dependencies, supporting complex web automation tasks.
-- 📝 **Document Processing**: Integrated Pandoc and LaTeX, supporting high-quality document format conversion and generation.
-- 💾 **Data Persistence**: Sophisticated Named Volumes ensure that `node_modules`, Go cache, and session data persist across container restarts.
+### 💡 How to Switch to Java Enhanced Edition
+If you need Java development capabilities, you can switch environments with one command:
+```bash
+# Automatically build the Java image and restart services
+make rebuild-java
+```
+Or switch manually via environment variables:
+1. Modify `.env` file: `OPENCLAW_IMAGE=openclaw:dev-java`
+2. Run `make up`
 
 ---
 
@@ -121,8 +133,10 @@ Edit the `.env` file in the project root for personalized configuration:
 | **Lifecycle**    | `make up / down`      | Start / Stop services                              |
 |                  | `make restart`        | Restart all services                               |
 |                  | `make status`         | View container status and access URLs              |
-| **Build/Update** | `make build`          | Rebuild development image                          |
-|                  | `make rebuild`        | Rebuild image and restart services                 |
+| **Build/Update** | `make build`          | Build standard image (Dockerfile.dev)              |
+|                  | `make build-java`     | Build Java enhanced image (Dockerfile.java)        |
+|                  | `make rebuild`        | Rebuild standard image and restart services        |
+|                  | `make rebuild-java`   | Rebuild Java image and restart services            |
 |                  | `make update`         | Fetch latest OpenClaw source from GitHub           |
 | **Debug/Diag**   | `make logs`           | Trace Gateway primary service logs                 |
 |                  | `make shell`          | Enter container shell (bash)                       |
@@ -137,21 +151,21 @@ Edit the `.env` file in the project root for personalized configuration:
 
 ## 📂 Directory Structure
 
-| Path                         | Category      | Description                                                                                                  |
-| :--------------------------- | :------------ | :----------------------------------------------------------------------------------------------------------- |
-| **`Makefile`**               | 🔧 Entry       | **Core Command Set**: Unifies container lifecycle, source updates, health checks, and config backups.        |
-| **`docker-compose.dev.yml`** | 🐳 Orchestrate | **Dev Env Definition**: Declares Gateway, CLI, and proxy services; configures Named Volumes for persistence. |
-| **`Dockerfile.dev`**         | 🏗️ Build       | **Standard Dev Image**: Integrates Go, Node, Python, Playwright, etc. Base for the DevKit.                   |
-| **`Dockerfile.java`**        | ☕ Build       | **Java Enhanced Image**: Adds JDK 25, Gradle, Maven, Spring Boot CLI, and Java auditing tools.               |
-| **`.openclaw_src/`**         | 📦 Source      | **OpenClaw Core**: Source code for the automation engine. Supports sync via `make update`.                   |
-| **`docker-dev-setup.sh`**    | 🚀 Setup       | **One-Click Logic**: Handles host permission fixes, network pre-checks, `.env` generation, and builds.       |
-| **`update-source.sh`**       | 🔄 Sync Tool   | **Source Hot-Pull**: Called by Makefile to auto-sync latest OpenClaw release via GitHub API.                 |
-| **`.env` (.example)**        | 🔑 Config      | **Environment Keys**: Stores proxy addresses, API tokens, host path mappings, etc.                           |
-| **`docs/`**                  | 📚 Resources   | **Project Assets**: Architecture diagrams, design drafts, and technical specifications.                      |
-| **`CLAUDE.md`**              | 🤖 AI Context  | **Agent Guide**: Provides development standards and architectural context for AI assistants.                 |
-| **`~/.openclaw`**            | 📂 Host Mount  | **Persistent State**: Stores logs, downloads, Agent configs, and user-defined workflows.                     |
-| **`slack-manifest.json`**    | 💬 Slack       | **App Manifest**: Format for importing App configurations into the Slack API dashboard.                      |
-| **`.gitignore`**             | 🙈 Git Ignore  | **VC Filter**: Prevents `.env`, `node_modules`, and local caches from being committed.                       |
+| Path                         | Category      | Description                                                                                                                |
+| :--------------------------- | :------------ | :------------------------------------------------------------------------------------------------------------------------- |
+| **`Makefile`**               | 🔧 Entry       | **Core Command Set**: Unifies container lifecycle, source updates, health checks, and config backups.                      |
+| **`docker-compose.dev.yml`** | 🐳 Orchestrate | **Dev Env Definition**: Declares Gateway, CLI, and proxy services; configures Named Volumes for persistence.               |
+| **`Dockerfile.dev`**         | 🏗️ Build       | **Standard Dev Image**: Integrates Go, Node, Python, Playwright, Claude Code, OpenCode, Pi-Mono, etc. Base for the DevKit. |
+| **`Dockerfile.java`**        | ☕ Build       | **Java Enhanced Image**: Adds JDK 25, Gradle, Maven, Spring Boot CLI, and Java auditing tools.                             |
+| **`.openclaw_src/`**         | 📦 Source      | **OpenClaw Core**: Source code for the automation engine. Supports sync via `make update`.                                 |
+| **`docker-dev-setup.sh`**    | 🚀 Setup       | **One-Click Logic**: Handles host permission fixes, network pre-checks, `.env` generation, and builds.                     |
+| **`update-source.sh`**       | 🔄 Sync Tool   | **Source Hot-Pull**: Called by Makefile to auto-sync latest OpenClaw release via GitHub API.                               |
+| **`.env` (.example)**        | 🔑 Config      | **Environment Keys**: Stores proxy addresses, API tokens, host path mappings, etc.                                         |
+| **`docs/`**                  | 📚 Resources   | **Project Assets**: Architecture diagrams, design drafts, and technical specifications.                                    |
+| **`CLAUDE.md`**              | 🤖 AI Context  | **Agent Guide**: Provides development standards and architectural context for AI assistants.                               |
+| **`~/.openclaw`**            | 📂 Host Mount  | **Persistent State**: Stores logs, downloads, Agent configs, and user-defined workflows.                                   |
+| **`slack-manifest.json`**    | 💬 Slack       | **App Manifest**: Format for importing App configurations into the Slack API dashboard.                                    |
+| **`.gitignore`**             | 🙈 Git Ignore  | **VC Filter**: Prevents `.env`, `node_modules`, and local caches from being committed.                                     |
 
 ---
 

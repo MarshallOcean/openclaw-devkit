@@ -3,10 +3,13 @@
 # 集成多语言开发栈: TypeScript (主) + Go + Python + Java
 #
 # 构建命令:
-#   docker build -t openclaw:dev-java -f Dockerfile.java .
+#   make build-java
 #
-# 运行命令:
-#   OPENCLAW_IMAGE=openclaw:dev-java ./docker-setup.sh
+# 重建并启动:
+#   make rebuild-java
+#
+# 手动运行镜像 (自定义镜像名):
+#   OPENCLAW_IMAGE=openclaw:dev-java make up
 
 FROM debian:latest
 
@@ -88,6 +91,9 @@ RUN npm install -g @playwright/test@latest
 
 # Claude Code CLI (Anthropic 官方 CLI 工具)
 RUN npm install -g @anthropic-ai/claude-code@latest
+
+# OpenCode & Pi-Mono AI Agent 工具
+RUN npm install -g opencode-ai @mariozechner/pi-coding-agent
 
 # Python 包 (Office 处理 + 知识库工具)
 ARG PYTHON_PACKAGES="\

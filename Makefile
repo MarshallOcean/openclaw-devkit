@@ -19,10 +19,16 @@
 # 默认目标
 .DEFAULT_GOAL := help
 
+# 环境配置
+-include .env
+
 # 变量
 COMPOSE_FILE := docker-compose.dev.yml
 SETUP_SCRIPT := docker-dev-setup.sh
+IMAGE_NAME ?= $(OPENCLAW_IMAGE)
+ifeq ($(IMAGE_NAME),)
 IMAGE_NAME := openclaw:dev
+endif
 GATEWAY_PORT := 18789
 
 # ============================================================
@@ -40,7 +46,7 @@ help: ## 显示帮助信息
 	@grep -E '^(install|up|down|status):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "├─ 构建与清理 ───────────────────────────────────────────────┤"
-	@grep -E '^(build|rebuild|clean|clean-volumes):.*## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^(build|build-java|rebuild|rebuild-java|clean):.*## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "│  \033[36m%-18s\033[0m %s │\n", $$1, $$2}'
 	@echo "├─ 调试与诊断 ───────────────────────────────────────────────┤"
 	@grep -E '^(logs|shell|exec|gateway-health|test-proxy):.*## .*$$' $(MAKEFILE_LIST) | \
@@ -121,11 +127,17 @@ build-java: ## 构建 Java 增强版镜像 (Dockerfile.java)
 		--build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
 		.openclaw_src
 
-rebuild: ## 重建镜像并重启服务
-	@echo "==> 重建镜像并重启服务..."
+rebuild: ## 重建镜像并重启服务 (标准版)
+	@echo "==> 重建镜像并重启服务 (标准版)..."
 	$(MAKE) build
 	$(MAKE) down
 	$(MAKE) up
+
+rebuild-java: ## 重建镜像并重启服务 (Java 增强版)
+	@echo "==> 重建镜像并重启服务 (Java 增强版)..."
+	$(MAKE) build-java
+	$(MAKE) down
+	OPENCLAW_IMAGE=openclaw:dev-java $(MAKE) up
 
 clean: ## 清理容器和悬空镜像
 	@echo "==> 清理 Docker 资源..."

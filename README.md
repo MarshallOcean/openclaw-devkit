@@ -14,6 +14,20 @@
 
 ---
 
+## ✨ 核心特性
+
+- 🚀 **一键式环境搭建**：基于 Docker Compose，秒级启动完整的开发运行环境。
+- 🛠️ **双重镜像版本选择**：
+    - **标准版 (Dockerfile.dev)**：集成 Go 1.26, Node 22 LTS, Python 3.13, pnpm, Bun, Playwright 等。
+    - **Java 增强版 (Dockerfile.java)**：在标准版基础上，深度集成 **JDK 25 (LTS)**、Google Java Format、Checkstyle、架构检查等企业级工具。
+- 🤖 **AI 编码助手集成**：原生支持 **Claude Code**, **OpenCode** 及 **Pi-Mono (Pi)** CLI，提供极致的 AI 辅助编程体验。
+- 🌐 **网络优化**：内置针对 Google API 和 Claude API 的代理转发逻辑，确保跨境访问稳定性。
+- 🎥 **自动化能力**：预装 Playwright 及所有浏览器依赖，支持复杂的网页自动化任务。
+- 📝 **文档处理**：集成 Pandoc 和 LaTeX，支持高质量的文档格式转换与生成。
+- 💾 **数据持久化**：精心设计的 Named Volumes，确保 node_modules、Go 缓存及会话数据在容器重启后依然存在。
+
+---
+
 ## 🚥 快速开始
 
 如果您是首次克隆本项目，请按照以下步骤确保环境完整：
@@ -23,6 +37,8 @@
 - **Docker & Docker Compose (V2)**
 - **Make** (大多数类 Unix 系统自带)
 - **网络代理** (推荐，用于访问 Claude/Google API)
+    > [!TIP]
+    > 💡 **小技巧**: 建议在宿主机 `hosts` 文件中添加 `127.0.0.1 host.docker.internal`。这样可以让本地直连、容器内开发共用同一套代理配置字符串 (`http://host.docker.internal:port`)，提升环境一致性。
 
 ### 2. 初始化环境
 ```bash
@@ -52,19 +68,15 @@ make test-proxy
 - **Web 控制台**: [http://127.0.0.1:18789](http://127.0.0.1:18789)
 - **调试日志**: `make logs`
 
----
-
-## ✨ 核心特性
-
-- 🚀 **一键式环境搭建**：基于 Docker Compose，秒级启动完整的开发运行环境。
-- 🛠️ **双重镜像版本选择**：
-    - **标准版 (Dockerfile.dev)**：集成 Go 1.26, Node 22 LTS, Python 3.13, pnpm, Bun, Playwright 等。
-    - **Java 增强版 (Dockerfile.java)**：在标准版基础上，深度集成 **JDK 25 (LTS)**、Google Java Format、Checkstyle、架构检查等企业级工具。
-- 🤖 **Claude Code 集成**：原生支持 Claude Code CLI，提供极致的 AI 辅助编程体验。
-- 🌐 **网络优化**：内置针对 Google API 和 Claude API 的代理转发逻辑，确保跨境访问稳定性。
-- 🎥 **自动化能力**：预装 Playwright 及所有浏览器依赖，支持复杂的网页自动化任务。
-- 📝 **文档处理**：集成 Pandoc 和 LaTeX，支持高质量的文档格式转换与生成。
-- 💾 **数据持久化**：精心设计的 Named Volumes，确保 node_modules、Go 缓存及会话数据在容器重启后依然存在。
+### 💡 如何切换到 Java 增强版
+如果你需要进行 Java 开发，可以一键切换环境：
+```bash
+# 自动构建 Java 镜像并重启服务
+make rebuild-java
+```
+或者手动通过环境变量切换：
+1. 修改 `.env` 文件：`OPENCLAW_IMAGE=openclaw:dev-java`
+2. 运行 `make up`
 
 ---
 
@@ -83,6 +95,7 @@ make test-proxy
 3. **编排层 (`docker-compose.dev.yml`)**：核心调度中心。它定义了容器间的网络抽象、环境变量注入、以及如何利用 Named Volumes 实现高效的 `node_modules` 缓存。
 4. **运行层 (`Dockerfile.dev`)**：环境的物理定义。它将 Node.js, Go, Python 和 Playwright 整合进一个统一的容器，消除了「在我的机器上能运行」的经典悖论。
 5. **维护层 (`update-source.sh`)**：自动化更新机制。它通过 GitHub API 监控版本变化，实现一键式的源码热更新与旧镜像清理。
+
 
 ---
 
@@ -121,8 +134,10 @@ make test-proxy
 | **生命周期** | `make up / down`      | 启动 / 停止服务                                   |
 |              | `make restart`        | 重启所有服务                                      |
 |              | `make status`         | 查看容器状态及访问地址                            |
-| **构建更新** | `make build`          | 重新构建开发镜像                                  |
-|              | `make rebuild`        | 重建镜像并重启服务 (更新代码后必用)               |
+| **构建更新** | `make build`          | 构建标准版镜像 (Dockerfile.dev)                   |
+|              | `make build-java`     | 构建 Java 增强版镜像 (Dockerfile.java)            |
+|              | `make rebuild`        | 重建标准镜像并重启服务                            |
+|              | `make rebuild-java`   | 重建 Java 镜像并重启服务                          |
 |              | `make update`         | 从 GitHub Release 获取最新 OpenClaw 源码          |
 | **调试诊断** | `make logs`           | 追踪 Gateway 主服务日志                           |
 |              | `make shell`          | 进入容器内部交互环境 (bash)                       |
@@ -141,7 +156,7 @@ make test-proxy
 | :--------------------------- | :----------- | :------------------------------------------------------------------------------------------------------------------------ |
 | **`Makefile`**               | 🔧 运维入口   | **核心指令集**：统一管理容器生命周期、源码更新、健康检查及配置备份。开发者只需通过 `make <cmd>` 即可完成 90% 的日常操作。 |
 | **`docker-compose.dev.yml`** | 🐳 服务编排   | **开发环境定义**：声明了 Gateway、CLI 以及网络代理服务，配置了复杂的 Named Volumes 实现数据持久化与跨容器共享。           |
-| **`Dockerfile.dev`**         | 🏗️ 镜像构建   | **标准开发版**：集成 Go 1.26, Node 22 LTS, Python 3.13, Playwright 等核心工具，是 DevKit 的默认运行基石。                 |
+| **`Dockerfile.dev`**         | 🏗️ 镜像构建   | **标准开发版**：集成 Go 1.26, Node 22 LTS, Python 3.13, Playwright, Claude Code, OpenCode, Pi-Mono 等核心工具。           |
 | **`Dockerfile.java`**        | ☕ 镜像构建   | **Java 增强版**：在标准版基础上，额外集成 JDK 25 LTS, Gradle, Maven, Spring Boot CLI 及 Java 质量审计工具。               |
 | **`.openclaw_src/`**         | 📦 核心源码   | **OpenClaw 主程序**：存放自动化引擎的源代码。支持通过 `make update` 自动同步远程 Release 或手动进行本地开发调试。         |
 | **`docker-dev-setup.sh`**    | 🚀 初始化脚本 | **一键启动逻辑**：处理复杂的宿主机权限修复、网络环境预检、.env 自动生成以及镜像的并行构建流程。                           |

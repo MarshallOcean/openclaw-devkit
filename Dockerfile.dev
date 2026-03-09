@@ -92,6 +92,9 @@ RUN npm install -g @playwright/test@latest
 # Claude Code CLI (Anthropic 官方 CLI 工具)
 RUN npm install -g @anthropic-ai/claude-code@latest
 
+# OpenCode & Pi-Mono AI Agent 工具
+RUN npm install -g opencode-ai @mariozechner/pi-coding-agent
+
 # Python 包 (Office 处理 + 知识库工具)
 ARG PYTHON_PACKAGES="\
   python-pptx \
