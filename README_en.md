@@ -41,21 +41,6 @@ Ensure the host machine has:
     > [!TIP]
     > 💡 **Tip**: We recommend adding `127.0.0.1 host.docker.internal` to your host machine's `hosts` file. This allows both local and containerized development to share the same proxy configuration string (`http://host.docker.internal:port`), improving environment consistency.
 
-## 📊 Feature Comparison
-
-| Feature         |    Standard Edition    | Java Enhanced Edition |   Office (Pro Edition)   |
-| :-------------- | :--------------------: | :-------------------: | :----------------------: |
-| Target Audience |      General Devs      |    Java Enterprise    | Automation & Copywriting |
-| Environment     |    Node, Go, Python    |     Same + JDK 25     |     Node 22, Python      |
-| AI Assistants   |       ✅ Included       |      ✅ Included       |        ✅ Included        |
-| Automation      |       Playwright       |      Playwright       |  Playwright + Selenium   |
-| Doc Conversion  |     Pandoc, LaTeX      |     Pandoc, LaTeX     |    Pandoc, Full LaTeX    |
-| OCR Engines     |           ❌            |           ❌           |    Tesseract (CN/EN)     |
-| Image/PDF Tools |           ❌            |           ❌           |   ImageMagick, Poppler   |
-| Data Analysis   |           ❌            |           ❌           |      Pandas, Numpy       |
-| Build Tools     |       pnpm, Bun        |     Gradle, Maven     |        pnpm, Bun         |
-| Key Advantage   | Lightweight, AI-Native | Policy & Audit Ready  |  Zero-Config Automation  |
-| Image Size      |         ~6.4GB         |        ~8.1GB         |      ~5.8GB (Slim)       |
 
 ### 2. Initialize Environment
 ```bash
@@ -93,10 +78,29 @@ make test-proxy
 
 ---
 
+## 📊 Feature Comparison
 
- Or switch manually via environment variables:
-1. Modify `.env` file: `OPENCLAW_IMAGE=openclaw:pro` (or `openclaw:dev-java`)
-2. Run `make up`
+| Feature         |    Standard Edition    | Java Enhanced Edition |   Office (Pro Edition)   |
+| :-------------- | :--------------------: | :-------------------: | :----------------------: |
+| Target Audience |      General Devs      |    Java Enterprise    | Automation & Copywriting |
+| Environment     |    Node, Go, Python    |     Same + JDK 25     |     Node 22, Python      |
+| AI Assistants   |       ✅ Included       |      ✅ Included       |            ❌             |
+| Automation      |       Playwright       |      Playwright       |  Playwright + Selenium   |
+| Doc Conversion  |     Pandoc, LaTeX      |     Pandoc, LaTeX     |    Pandoc, Full LaTeX    |
+| OCR Engines     |           ❌            |           ❌           |    Tesseract (CN/EN)     |
+| Image/PDF Tools |         Pandoc         |        Pandoc         |   ImageMagick, Poppler   |
+| Data Analysis   |           ❌            |           ❌           |      Pandas, Numpy       |
+| Build Tools     |       pnpm, Bun        |     Gradle, Maven     |        pnpm, Bun         |
+| Key Advantage   | Lightweight, AI-Native | Policy & Audit Ready  |  Zero-Config Automation  |
+| Image Size      |         ~6.4GB         |        ~8.1GB         |      ~5.8GB (Slim)       |
+
+---
+
+
+> [!TIP]
+> **Manual Switch**:
+> 1. Modify `.env` file: `OPENCLAW_IMAGE=openclaw:pro` (or `openclaw:dev-java`)
+> 2. Run `make up`
 
 ---
 

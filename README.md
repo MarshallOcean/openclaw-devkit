@@ -67,15 +67,22 @@ make install java
 | :------------ | :---------------: | :--------------------: | :-------------------: |
 | 适用人群      |     全栈开发      |    Java 企业级开发     |   文案与办公自动化    |
 | 核心环境      | Node, Go, Python  |     同左 + JDK 25      |    Node 22, Python    |
-| AI 助手       |    ✅ 完整内置     |       ✅ 完整内置       |      ✅ 完整内置       |
+| AI 助手       |    ✅ 完整内置     |       ✅ 完整内置       |           ❌           |
 | 网页自动化    |    Playwright     |       Playwright       | Playwright + Selenium |
 | 文档转换      |   Pandoc, LaTeX   |     Pandoc, LaTeX      | Pandoc, LaTeX (Full)  |
 | OCR 识别      |         ❌         |           ❌            | Tesseract-OCR (中/英) |
-| 图像/PDF 处理 |         ❌         |           ❌            | ImageMagick, Poppler  |
+| 图像/PDF 处理 |      Pandoc       |         Pandoc         | ImageMagick, Poppler  |
 | 数据分析      |         ❌         |           ❌            |     Pandas, Numpy     |
 | 工程工具      |     pnpm, Bun     |     Gradle, Maven      |       pnpm, Bun       |
 | 环境特点      |   轻量、聚焦 AI   |    深度集成审计工具    |  零门槛、全集成办公   |
 | 镜像大小      |      ~6.4GB       |         ~8.1GB         |     ~5.8GB (Slim)     |
+
+---
+
+> [!TIP]
+> **手动切换镜像**:
+> 1. 修改 `.env` 文件: `OPENCLAW_IMAGE=openclaw:pro` (或 `openclaw:dev-java`)
+> 2. 运行 `make up`
 
 ---
 

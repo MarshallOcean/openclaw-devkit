@@ -26,7 +26,7 @@
         java office dev
 
 # 默认目标
-.DEFAULT_GOAL := help-full
+.DEFAULT_GOAL := help
 
 # 环境配置
 -include .env
@@ -53,48 +53,7 @@ DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROX
 # 帮助信息 (现代分组版)
 # ============================================================
 
-help: ## 显示帮助
-	@echo ""
-	@echo "  🦷  OpenClaw DevKit  v2.0"
-	@echo "  ─────────────────────────────────────────────"
-	@echo ""
-	@echo "  ⚡  快速开始"
-	@printf "    %-20s %s\n" "install" "安装环境并启动"
-	@printf "    %-20s %s\n" "up" "启动服务"
-	@printf "    %-20s %s\n" "logs" "查看日志"
-	@echo ""
-	@echo "  🔄  生命周期"
-	@printf "    %-20s %s\n" "down" "停止服务"
-	@printf "    %-20s %s\n" "restart" "重启服务"
-	@printf "    %-20s %s\n" "status" "查看状态"
-	@echo ""
-	@echo "  🔧  构建"
-	@printf "    %-20s %s\n" "build [version]" "构建镜像"
-	@printf "    %-20s %s\n" "rebuild [version]" "重建并重启"
-	@echo ""
-	@echo "  🐛  调试"
-	@printf "    %-20s %s\n" "shell" "进入容器"
-	@printf "    %-20s %s\n" "logs-all" "查看所有日志"
-	@printf "    %-20s %s\n" "exec CMD='...'" "执行命令"
-	@printf "    %-20s %s\n" "test-proxy" "测试代理"
-	@echo ""
-	@echo "  💾  备份"
-	@printf "    %-20s %s\n" "backup-config" "备份配置"
-	@printf "    %-20s %s\n" "restore-config FILE=..." "恢复配置"
-	@echo ""
-	@echo "  🧹  维护"
-	@printf "    %-20s %s\n" "update" "更新源码"
-	@printf "    %-20s %s\n" "check-deps" "检查依赖"
-	@printf "    %-20s %s\n" "clean" "清理镜像"
-	@printf "    %-20s %s\n" "clean-volumes" "清理数据卷"
-	@echo ""
-	@echo "───────────────────────────────────────────────"
-	@printf "  版本: %s\n" "make <cmd> java|office|dev"
-	@printf "  完整: %s\n" "make help-full"
-	@echo "───────────────────────────────────────────────"
-	@echo ""
-
-help-full: ## 显示完整帮助
+help: ## 显示完整帮助
 	@echo ""
 	@echo "  🦷  OpenClaw DevKit  v2.0  |  完整命令列表"
 	@echo "  ═════════════════════════════════════════════"
