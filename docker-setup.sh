@@ -2,7 +2,7 @@
 # OpenClaw 开发环境 Docker 部署脚本
 #
 # 用法:
-#   ./docker-dev-setup.sh [选项]
+#   ./docker-setup.sh [选项]
 #
 # 选项:
 #   --no-browser    跳过浏览器安装（减少约 300MB）
@@ -19,7 +19,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="${OPENCLAW_IMAGE:-openclaw:dev}"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
-DEV_COMPOSE_FILE="$ROOT_DIR/docker-compose.dev.yml"
+DEV_COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 EXTRA_COMPOSE_FILE="$ROOT_DIR/docker-compose.dev.extra.yml"
 
 # ============================================================
@@ -256,13 +256,13 @@ OpenClaw 开发环境 Docker 部署脚本
 
 示例:
   # 基本使用
-  ./docker-dev-setup.sh
+  ./docker-setup.sh
 
   # 跳过浏览器安装
-  ./docker-dev-setup.sh --no-browser
+  ./docker-setup.sh --no-browser
 
   # 挂载额外目录
-  OPENCLAW_EXTRA_MOUNTS="$HOME/projects:/home/node/projects:rw" ./docker-dev-setup.sh
+  OPENCLAW_EXTRA_MOUNTS="$HOME/projects:/home/node/projects:rw" ./docker-setup.sh
 
   # 使用 Java 增强版进行安装
   make install java
@@ -368,7 +368,7 @@ if [[ ! -f "$ROOT_DIR/.openclaw_src/package.json" ]]; then
 fi
 
 # 选择 Dockerfile
-DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.dev"
+DOCKERFILE_PATH="$ROOT_DIR/Dockerfile"
 if [[ "$IMAGE_NAME" == *"-java"* ]]; then
   DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.java"
 elif [[ "$IMAGE_NAME" == *"pro"* ]]; then

@@ -31,9 +31,11 @@ ENV https_proxy=$HTTPS_PROXY
 
 # 安装构建依赖
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl wget jq git ripgrep fd-find build-essential pkg-config ca-certificates unzip && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+    curl wget jq git ripgrep fd-find build-essential pkg-config ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* || \
+    (apt-get update --fix-missing && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends -o Acquire::Retries=5 \
+    curl wget jq git ripgrep fd-find build-essential pkg-config ca-certificates)
 
 # 安装 Bun (官方推荐方式)
 RUN curl -fsSL https://bun.sh/install | bash
@@ -82,14 +84,16 @@ LABEL org.opencontainers.image.base.name="docker.io/library/node:22-bookworm-sli
 
 # 安装运行时依赖
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
     curl git openssl \
     # Office 处理与 PDF 工具
     poppler-utils ghostscript imagemagick tesseract-ocr \
     tesseract-ocr-chi-sim tesseract-ocr-chi-tra fonts-wqy-zenhei fonts-liberation fonts-noto-color-emoji \
     # 基础工具
     python3 python3-pip python3-venv unzip file sqlite3 zip && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/* || \
+    (apt-get update --fix-missing && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends -o Acquire::Retries=5 \
+    curl git openssl poppler-utils ghostscript imagemagick tesseract-ocr tesseract-ocr-chi-sim tesseract-ocr-chi-tra fonts-wqy-zenhei fonts-liberation fonts-noto-color-emoji python3 python3-pip python3-venv unzip file sqlite3 zip)
 
 # base 镜像自带 node/npm，不需要从 builder 复制
 
@@ -144,6 +148,7 @@ COPY --from=builder --chown=node:node /app/package.json .
 COPY --from=builder --chown=node:node /app/openclaw.mjs .
 COPY --from=builder --chown=node:node /app/extensions ./extensions
 COPY --from=builder --chown=node:node /app/skills ./skills
+COPY --from=builder --chown=node:node /app/docs ./docs
 
 # 改变目录 owner
 RUN chown -R node:node /app
@@ -163,8 +168,8 @@ RUN if [ -n "$OPENCLAW_INSTALL_BROWSER" ]; then \
 # 规范化扩展权限 (官方推荐)
 RUN for dir in /app/extensions /app/.agent /app/.agents; do \
     if [ -d "$dir" ]; then \
-      find "$dir" -type d -exec chmod 755 {} +; \
-      find "$dir" -type f -exec chmod 644 {} +; \
+    find "$dir" -type d -exec chmod 755 {} +; \
+    find "$dir" -type f -exec chmod 644 {} +; \
     fi; \
     done
 

@@ -18,7 +18,7 @@ It integrates an out-of-the-box toolchain designed to help developers quickly bu
 
 - 🚀 **One-Click Environment Setup**: Based on Docker Compose, start a complete development environment in seconds.
 - 🛠️ **Dual Image Version Selection**:
-    - **Standard Edition (Dockerfile.dev)**: Integrated with Go 1.26, Node 22 LTS, Python 3.13, pnpm, Bun, Playwright, etc.
+    - **Standard Edition (Dockerfile)**: Integrated with Go 1.26, Node 22 LTS, Python 3.13, pnpm, Bun, Playwright, etc.
     - **Office Edition (Pro)**: Specialized for **non-developers**. Includes enhanced OCR, PDF tools, and UI automation.
     - **Java Enhanced Edition (Dockerfile.java)**: Deeply integrated with **JDK 25 (LTS)** and enterprise-grade tools.
 - 🧠 **AI-Native Integration**: Built-in **Claude Code**, **OpenCode**, and **Pi-Mono**, allowing AI to write and run code directly within the container for you.

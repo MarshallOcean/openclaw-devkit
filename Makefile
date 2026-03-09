@@ -5,9 +5,9 @@
 # 帮助: make help
 #
 # 镜像版本:
-#   - openclaw:dev     标准版 (默认)
-#   - openclaw:pro     Office 办公版
-#   - openclaw:dev-java Java 增强版
+#   - docker-compose.yml       Docker Compose 配置
+#   - Dockerfile               开发环境镜像
+#   - docker-setup.sh          初始化脚本
 #
 # 示例:
 #   make install              # 安装标准版
@@ -35,8 +35,8 @@
 # 变量定义
 # ============================================================
 
-COMPOSE_FILE := docker-compose.dev.yml
-SETUP_SCRIPT := docker-dev-setup.sh
+COMPOSE_FILE := docker-compose.yml
+SETUP_SCRIPT := docker-setup.sh
 GATEWAY_PORT := 18789
 OPENCLAW_BIN := openclaw
 
@@ -132,7 +132,7 @@ help-full: ## 显示完整帮助
 	@echo ""
 	@echo "  💾  备份与恢复"
 	@printf "    %-22s %s\n" "make backup-config" "备份配置到 ~/.openclaw-backups/"
-	@printf "    %-22s %s\n" "make restore-config FILE=xxx" "恢复配置"
+	@printf "    %-22s %s\n" "make restore-config FILE=..." "恢复配置"
 	@echo ""
 	@echo "  🧹  维护与清理"
 	@printf "    %-22s %s\n" "make update" "从 GitHub 更新源码"
@@ -245,8 +245,9 @@ logs-all: ## 查看所有容器日志
 shell: ## 进入 Gateway 容器
 	@docker compose -f $(COMPOSE_FILE) exec openclaw-gateway bash
 
-verify: ## 验证镜像工具版本
-	@docker run --rm $(IMAGE_NAME) node -v 2>/dev/null | grep -q "v22" && echo "✓ Node.js v22" || echo "✗ Node.js"
+verify: ## 验证镜像工具版本 (2025 最佳实践检查)
+	@echo "==> 验证标准版镜像: $(IMAGE_NAME)"
+	docker run --rm $(IMAGE_NAME) node -v | grep -q "v22" && echo "✓ Node.js v22 (LTS) OK" || echo "✗ Node.js version mismatch"
 	@docker run --rm $(IMAGE_NAME) go version 2>/dev/null | grep -q "1.2" && echo "✓ Go 1.2x" || echo "⚠ Go (Office版无)"
 
 exec: ## 执行命令
@@ -326,7 +327,10 @@ endef
 define do_build
 $(call select_image,$(2))
 @echo "==> 构建 $(IMAGE_NAME)"
-docker build -t $(IMAGE_NAME) -f Dockerfile.$(1) $(DOCKER_BUILD_ARGS) .openclaw_src
+	docker build \
+		-t $(IMAGE_NAME) \
+		-f $(if $(filter dev,$(1)),Dockerfile,Dockerfile.$(1)) \
+		$(DOCKER_BUILD_ARGS) .openclaw_src
 endef
 
 define do_rebuild

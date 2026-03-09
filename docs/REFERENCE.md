@@ -55,19 +55,19 @@
 
 ## 📂 目录结构详解 (Directory Structure)
 
-| 路径                     | 详细用途                                         |
-| :----------------------- | :----------------------------------------------- |
-| `Makefile`               | 核心运维入口，封装了所有复杂指令                 |
-| `docker-compose.dev.yml` | 定义容器编排、网络、数据卷挂载逻辑               |
-| `Dockerfile.dev`         | 标准版环境：集成 Go, Node, Python, Playwright 等 |
-| `Dockerfile.java`        | Java 增强版：追加 JDK 25, Gradle, Maven 等       |
-| `.openclaw_src/`         | 存储 OpenClaw 核心源码，由 `make update` 管理    |
-| `docker-dev-setup.sh`    | 初始化脚本，处理文件夹预建及权限纠正             |
-| `update-source.sh`       | 增量版本同步工具                                 |
-| `.env.example`           | 配置模板文件                                     |
-| `docs/`                  | 存放架构图等项目资产                             |
-| `CLAUDE.md`              | 给 AI 助手的项目规范指引                         |
-| `slack-manifest.json`    | Slack App 快速导入配置单                         |
+| 路径                  | 详细用途                                         |
+| :-------------------- | :----------------------------------------------- |
+| `Makefile`            | 核心运维入口，封装了所有复杂指令                 |
+| `docker-compose.yml`  | 定义容器编排、网络、数据卷挂载逻辑               |
+| `Dockerfile`          | 标准版环境：集成 Go, Node, Python, Playwright 等 |
+| `Dockerfile.java`     | Java 增强版：追加 JDK 25, Gradle, Maven 等       |
+| `.openclaw_src/`      | 存储 OpenClaw 核心源码，由 `make update` 管理    |
+| `docker-dev-setup.sh` | 初始化脚本，处理文件夹预建及权限纠正             |
+| `update-source.sh`    | 增量版本同步工具                                 |
+| `.env.example`        | 配置模板文件                                     |
+| `docs/`               | 存放架构图等项目资产                             |
+| `CLAUDE.md`           | 给 AI 助手的项目规范指引                         |
+| `slack-manifest.json` | Slack App 快速导入配置单                         |
 
 ---
 

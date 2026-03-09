@@ -55,19 +55,19 @@ Defined in the `.env` file at the project root:
 
 ## 📂 Directory Structure Details
 
-| Path                     | Detailed Purpose                                      |
-| :----------------------- | :---------------------------------------------------- |
-| `Makefile`               | Core maintenance entry, wraps complex commands        |
-| `docker-compose.dev.yml` | Defins orchestration, networking, and volumes         |
-| `Dockerfile.dev`         | Standard: Includes Go, Node, Python, Playwright, etc. |
-| `Dockerfile.java`        | Java Enhanced: Adds JDK 25, Gradle, Maven, etc.       |
-| `.openclaw_src/`         | Stores OpenClaw core source, managed by `make update` |
-| `docker-dev-setup.sh`    | Initialization script for dir tree and permissions    |
-| `update-source.sh`       | Incremental version sync tool                         |
-| `.env.example`           | Configuration template                                |
-| `docs/`                  | Project assets such as architecture diagrams          |
-| `CLAUDE.md`              | Guidelines for AI development assistants              |
-| `slack-manifest.json`    | Manifest for quick Slack App configuration            |
+| Path                  | Detailed Purpose                                      |
+| :-------------------- | :---------------------------------------------------- |
+| `Makefile`            | Core maintenance entry, wraps complex commands        |
+| `docker-compose.yml`  | Docker Compose Configuration, networking, and volumes |
+| `Dockerfile`          | Standard: Includes Go, Node, Python, Playwright, etc. |
+| `Dockerfile.java`     | Java Enhanced: Adds JDK 25, Gradle, Maven, etc.       |
+| `.openclaw_src/`      | Stores OpenClaw core source, managed by `make update` |
+| `docker-dev-setup.sh` | Initialization script for dir tree and permissions    |
+| `update-source.sh`    | Incremental version sync tool                         |
+| `.env.example`        | Configuration template                                |
+| `docs/`               | Project assets such as architecture diagrams          |
+| `CLAUDE.md`           | Guidelines for AI development assistants              |
+| `slack-manifest.json` | Manifest for quick Slack App configuration            |
 
 ---
 
