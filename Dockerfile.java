@@ -8,12 +8,12 @@
 # 运行命令:
 #   OPENCLAW_IMAGE=openclaw:dev-java ./docker-setup.sh
 
-FROM ubuntu:24.04
+FROM debian:latest
 
-LABEL org.opencontainers.image.base.name="docker.io/library/node:24-bookworm" \
+LABEL org.opencontainers.image.base.name="docker.io/library/debian:latest" \
   org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
-  org.opencontainers.image.title="OpenClaw Dev (2026 Java Enhanced)" \
-  org.opencontainers.image.description="OpenClaw gateway with full 2026 toolchain (Node 24, Go 1.27, Python 3.13, Java 25)"
+  org.opencontainers.image.title="OpenClaw Dev (2025 Java Enhanced)" \
+  org.opencontainers.image.description="OpenClaw gateway with 2025 toolchain (Node 22 LTS, Go 1.26, Python 3.13, Java 25)"
 
 # ============================================================
 # 第一阶段：安装系统依赖和开发工具链
@@ -27,34 +27,29 @@ ARG HTTPS_PROXY
 ENV http_proxy=$HTTP_PROXY
 ENV https_proxy=$HTTPS_PROXY
 
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-ENV http_proxy=$HTTP_PROXY
-ENV https_proxy=$HTTPS_PROXY
-
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   --mount=type=cache,target=/var/lib/apt,sharing=locked \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   curl wget jq git ripgrep fd-find bat httpie python3 python3-pip python3-venv build-essential pkg-config \
-  pandoc texlive-latex-base texlive-fonts-recommended xvfb libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 \
-  libgbm1 libasound2 libatspi2.0-0 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
-  libdbus-1-3 libgtk-3-0 fonts-liberation fonts-noto-color-emoji unzip file sqlite3 zip
+  pandoc texlive-latex-base texlive-fonts-recommended xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
+  libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+  libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji unzip file sqlite3 zip
 
 # ============================================================
-# Node.js 24 (LTS) 手动安装
+# Node.js 22 LTS 手动安装
 # ============================================================
-ARG NODE_VERSION=24.16.0
+ARG NODE_VERSION=22.22.1
 RUN ARCH=$(dpkg --print-architecture) && \
   curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz" | tar -xJ -C /usr/local --strip-components=1 && \
   groupadd --gid 1000 node && \
   useradd --uid 1000 --gid node --shell /bin/bash --create-home node
 
 # ============================================================
-# Go 1.27 (Released 2026)
+# Go 1.26 (Latest Stable 2025)
 # ============================================================
 # https://go.dev/dl/
-ARG GO_VERSION=1.27.2
+ARG GO_VERSION=1.26.1
 RUN ARCH=$(dpkg --print-architecture) && \
   curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" | tar -C /usr/local -xz && \
   ln -sf /usr/local/go/bin/go /usr/local/bin/go && \
@@ -104,10 +99,6 @@ ARG PYTHON_PACKAGES="\
   pyyaml \
   pandoc"
 RUN pip3 install --break-system-packages $PYTHON_PACKAGES
-
-# Go 环境变量
-ENV GOPATH=/home/node/go
-ENV PATH="${GOPATH}/bin:/usr/local/go/bin:${PATH}"
 
 # ============================================================
 # Go 开发工具链 (golangci-lint, gopls, dlv, etc.)
@@ -170,15 +161,15 @@ ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -Dfile.encoding=UTF-8"
 
 
 # 安装 Java 开发工具 (Spring Boot, Formatter, Linter, etc.)
-ARG SPRING_BOOT_VERSION=3.4.4
+ARG SPRING_BOOT_VERSION=3.5.3
 ARG GOOGLE_JAVA_FORMAT_VERSION=1.27.0
 ARG CHECKSTYLE_VERSION=10.23.1
 ARG PMD_VERSION=7.12.0
 ARG SPOTBUGS_VERSION=4.9.3
 
 RUN mkdir -p /home/node/.local/bin /home/node/.local/lib && \
-  # Spring Boot CLI
-  curl -fsSL "https://repo.spring.io/release/org/springframework/boot/spring-boot-cli/${SPRING_BOOT_VERSION}/spring-boot-cli-${SPRING_BOOT_VERSION}-bin.tar.gz" | \
+  # Spring Boot CLI (from Maven Central)
+  curl -fsSL "https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-cli/${SPRING_BOOT_VERSION}/spring-boot-cli-${SPRING_BOOT_VERSION}-bin.tar.gz" | \
   tar -xz -C /home/node/.local && \
   ln -sf /home/node/.local/spring-${SPRING_BOOT_VERSION}/bin/spring /home/node/.local/bin/spring && \
   # Google Java Format

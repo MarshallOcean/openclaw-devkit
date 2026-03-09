@@ -357,6 +357,16 @@ export OPENCLAW_GATEWAY_TOKEN
 # ============================================================
 
 echo "==> 构建开发环境镜像: $IMAGE_NAME"
+if [[ ! -f "$ROOT_DIR/.openclaw_src/package.json" ]]; then
+  echo ""
+  echo "❌ 错误: 在 .openclaw_src 目录中未找到项目源码 (package.json)。"
+  echo "提示: 如果您是首次克隆本项目，请先运行以下命令拉取源码："
+  echo ""
+  echo "    make update"
+  echo ""
+  exit 1
+fi
+
 docker build \
   -t "$IMAGE_NAME" \
   -f "$ROOT_DIR/Dockerfile.dev" \
