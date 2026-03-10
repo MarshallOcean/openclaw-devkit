@@ -34,6 +34,13 @@ RUN apt-get update && \
     curl wget jq git ripgrep fd-find build-essential pkg-config ca-certificates unzip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ============================================================
+# Node.js 22 LTS
+# ============================================================
+ARG NODE_VERSION=22.22.1
+RUN ARCH=$(dpkg --print-architecture) && \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz" | tar -xJ -C /usr/local --strip-components=1
+
 # 安装 Bun
 RUN ARCH=$(dpkg --print-architecture) && \
     case "$ARCH" in \
@@ -79,10 +86,15 @@ FROM debian:stable-slim AS base
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 
 # OCI 镜像元数据
-LABEL org.opencontainers.image.base.name="docker.io/library/node:22-bookworm-slim" \
+LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
     org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
     org.opencontainers.image.title="OpenClaw Office" \
     org.opencontainers.image.description="OpenClaw gateway for office automation (Node 22, Python, OCR, PDF Tools)"
+
+# 安装 Node.js (用于运行 pnpm/npm)
+ARG NODE_VERSION=22.22.1
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" | tar -xJ -C /usr/local --strip-components=1
 
 # 安装运行时依赖
 RUN apt-get update && \
