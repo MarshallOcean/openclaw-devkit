@@ -166,9 +166,9 @@ FROM debian:stable-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 安装基础工具 (curl, xz for Node.js tarballs)
+# 安装基础工具 (curl, xz-utils for Node.js tarballs)
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl xz
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl xz-utils
 
 # 安装 Node.js (用于运行 pnpm/npm)
 ARG NODE_VERSION=22.22.1
