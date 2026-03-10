@@ -31,7 +31,7 @@ ARG SPOTBUGS_VERSION=4.9.3
 # ============================================================
 # 第一阶段：构建依赖 (builder)
 # ============================================================
-FROM node:22-bookworm-slim@sha256:9c2c405e3ff9b9afb2873232d24bb06367d649aa3e6259cbe314da59578e81e9 AS builder
+FROM debian:stable-slim AS builder
 
 LABEL org.opencontainers.image.base.name="docker.io/library/node:22-bookworm-slim" \
   org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
@@ -208,7 +208,7 @@ RUN pnpm ui:build
 # ============================================================
 # 第二阶段：运行时基础镜像 (base)
 # ============================================================
-FROM node:22-bookworm-slim@sha256:9c2c405e3ff9b9afb2873232d24bb06367d649aa3e6259cbe314da59578e81e9 AS base
+FROM debian:stable-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -217,8 +217,8 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
     curl git openssl \
     pandoc texlive-latex-base texlive-fonts-recommended \
-    xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji \
     python3 python3-pip python3-venv unzip file sqlite3 zip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*

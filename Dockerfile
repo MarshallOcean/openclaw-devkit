@@ -10,7 +10,7 @@ ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml
 ARG INSTALL_BROWSER=1
 
 # OpenClaw 开发环境定制镜像 (标准开发版)
-# 基于官方 node:22-bookworm 基础镜像，集成多语言开发栈
+# 基于官方 debian:latest 基础镜像，集成多语言开发栈
 #
 # 构建命令:
 #   docker build -t openclaw:dev -f Dockerfile .
@@ -20,9 +20,9 @@ ARG INSTALL_BROWSER=1
 # ============================================================
 # 第一阶段：构建依赖 (builder)
 # ============================================================
-FROM node:22-bookworm-slim@sha256:9c2c405e3ff9b9afb2873232d24bb06367d649aa3e6259cbe314da59578e81e9 AS builder
+FROM debian:stable-slim AS builder
 
-LABEL org.opencontainers.image.base.name="docker.io/library/node:22-bookworm-slim" \
+LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
   org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
   org.opencontainers.image.title="OpenClaw Dev (2025 Standard)" \
   org.opencontainers.image.description="OpenClaw gateway with 2025 toolchain (Node 22 LTS, Go 1.26, Python 3.13)"
@@ -38,12 +38,19 @@ RUN apt-get update && \
     # 文档处理导出
     pandoc texlive-latex-base texlive-fonts-recommended \
     # 浏览器自动化依赖
-    xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji \
     # 基础工具
     unzip file sqlite3 zip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# Node.js 22 LTS
+# ============================================================
+ARG NODE_VERSION=22.22.1
+RUN ARCH=$(dpkg --print-architecture) && \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.xz" | tar -xJ -C /usr/local --strip-components=1
 
 # ============================================================
 # Go 1.26 (Latest Stable 2025)
@@ -155,7 +162,7 @@ RUN pnpm ui:build
 # ============================================================
 # 第二阶段：运行时基础镜像 (base===)
 # =========================================================
-FROM node:22-bookworm-slim@sha256:9c2c405e3ff9b9afb2873232d24bb06367d649aa3e6259cbe314da59578e81e9 AS base
+FROM debian:stable-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -166,8 +173,8 @@ RUN apt-get update && \
     # 文档处理
     pandoc texlive-latex-base texlive-fonts-recommended \
     # 浏览器自动化依赖
-    xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji \
     # 基础工具
     python3 python3-pip python3-venv unzip file sqlite3 zip && \
