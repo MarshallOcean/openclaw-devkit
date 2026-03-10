@@ -81,6 +81,34 @@ make test-proxy
 
 ---
 
+> [!WARNING]
+> ## ⚠️ Important Security Warning: Do NOT Mix Container & Host Installation
+>
+> This project shares configuration with the host machine via the `~/.openclaw` directory. Using both running methods simultaneously poses **security risks**:
+>
+> | Running Mode | `gateway.bind` Required | Security Notes |
+> | :----------- | :--------------------- | :------------- |
+> | **Docker Container** | `lan` (bind to `0.0.0.0`) | ✅ **Required** — Docker port mapping `127.0.0.1:18789` restricts access to localhost only |
+> | **Host Direct Run** | `loopback` (bind to `127.0.0.1`) | ⚠️ Using `lan` will expose to local network |
+>
+> ### Why must containers use `lan`?
+> Docker port mapping `127.0.0.1:18789:18789` means requests received by the host are forwarded to the container. If the service inside the container binds to `127.0.0.1`, it cannot properly receive requests forwarded from the Docker network layer. Binding to `0.0.0.0` is required for it to work.
+>
+> ### Recommended Approach
+> 1. **Container-only usage** (recommended): Keep `gateway.bind = "lan"`, do not install OpenClaw on the host
+> 2. **Need to run on host directly**: Change to `gateway.bind = "loopback"`, and ensure containers are stopped before starting host services
+> 3. **Need both**: Use **separate config directories** (e.g., `~/.openclaw-docker` and `~/.openclaw-local`)
+>
+> ```bash
+> # Check current bind config
+> cat ~/.openclaw/openclaw.json | jq '.gateway.bind'
+>
+> # Change to loopback (for host direct run)
+> # In config file, change "bind": "lan" to "bind": "loopback"
+> ```
+
+---
+
 ## 📊 Feature Comparison
 
 | Feature              |    Standard Edition    | Java Enhanced Edition |   Office (Pro Edition)   |
@@ -276,8 +304,6 @@ services:
       # Add custom mount
       - /your/project/path:/home/node/your/container/path:rw
 ```
-
-> ⚠️ **Note**: The `.env` file `OPENCLAW_EXTRA_MOUNTS` variable is **not yet supported** in the current version. To add extra mounts, directly edit the mount entries in [`docker-compose.yml`](./docker-compose.yml).
 
 ### Common Extension Scenarios
 
