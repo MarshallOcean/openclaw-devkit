@@ -25,6 +25,30 @@
 
 ---
 
+## 前置条件
+
+### 通用要求
+- **Docker**: V2 (Docker Desktop for macOS/Windows, Docker Engine for Linux)
+- **Docker Compose**: V2 (内置于 Docker Desktop)
+- **Make**: macOS/Linux 自带，Windows 需安装 [Make for Windows](https://gnuwin32.sourceforge.net/packages/make.htm) 或使用 [Git Bash](https://git-scm.com/download/win)
+
+### Windows 用户特殊要求
+
+| 组件 | 要求 | 说明 |
+| :--- | :--- | :--- |
+| **操作系统** | Windows 10 21H2+ 或 Windows 11 | |
+| **WSL2** | 必须安装 | [安装指南](https://docs.microsoft.com/zh-cn/windows/wsl/install) |
+| **内存** | 推荐 8GB+ | Docker Desktop 最低 4GB |
+| **虚拟化** | 需在 BIOS/UEFI 中启用 | Intel VT-x / AMD-V |
+
+> [!TIP]
+> Windows 推荐使用 **Docker Desktop**（自带 WSL2 集成），安装后需开启 WSL2 功能：
+> ```powershell
+> wsl --install
+> ```
+
+---
+
 ## 🚀 快速开始
 
 ### 预构建镜像 ⭐（推荐）

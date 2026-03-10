@@ -29,6 +29,30 @@ It integrates an out-of-the-box toolchain designed to help developers quickly bu
 
 ---
 
+## Prerequisites
+
+### General Requirements
+- **Docker**: V2 (Docker Desktop for macOS/Windows, Docker Engine for Linux)
+- **Docker Compose**: V2 (included in Docker Desktop)
+- **Make**: Pre-installed on macOS/Linux, Windows users need [Make for Windows](https://gnuwin32.sourceforge.net/packages/make.htm) or [Git Bash](https://git-scm.com/download/win)
+
+### Windows-Specific Requirements
+
+| Component | Requirement | Notes |
+| :--- | :--- | :--- |
+| **OS** | Windows 10 21H2+ or Windows 11 | |
+| **WSL2** | Required | [Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install) |
+| **Memory** | 8GB+ recommended | Docker Desktop minimum 4GB |
+| **Virtualization** | Must enable in BIOS/UEFI | Intel VT-x / AMD-V |
+
+> [!TIP]
+> Windows users should use **Docker Desktop** (includes WSL2 integration). After installation, enable WSL2:
+> ```powershell
+> wsl --install
+> ```
+
+---
+
 ## 🚥 Quick Start
 
 ### Prebuilt Image ⭐ (Recommended)
