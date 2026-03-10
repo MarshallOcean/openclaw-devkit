@@ -69,6 +69,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: openclaw-version
+          path: .
 
       - name: Read version
         id: version
