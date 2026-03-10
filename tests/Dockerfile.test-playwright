@@ -1,0 +1,56 @@
+# ============================================================
+# Playwright CLI + Skills 测试镜像
+# 用于验证 @playwright/cli 和 skill 文件的安装
+# ============================================================
+
+FROM debian:stable-slim AS test
+
+# 安装基础依赖 (包含 CA certificates)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Playwright CLI (测试验证)
+RUN npm install -g @playwright/cli@latest
+
+# 安装 Playwright skills (模拟构建时下载)
+RUN mkdir -p /root/.claude/skills/playwright-cli/references && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/SKILL.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/SKILL.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/request-mocking.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/request-mocking.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/running-code.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/running-code.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/session-management.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/session-management.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/storage-state.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/storage-state.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/test-generation.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/test-generation.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/tracing.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/tracing.md && \
+    curl -fsSL -o /root/.claude/skills/playwright-cli/references/video-recording.md \
+    https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/video-recording.md
+
+# 验证安装
+RUN echo "=== 验证 Playwright CLI ===" && \
+    playwright-cli --version && \
+    echo "" && \
+    echo "=== 验证 Skill 文件 ===" && \
+    ls -la /root/.claude/skills/playwright-cli/ && \
+    echo "" && \
+    echo "=== 验证 Reference 文件 ===" && \
+    ls -la /root/.claude/skills/playwright-cli/references/ && \
+    echo "" && \
+    echo "=== Skill 文件前 30 行 ===" && \
+    head -30 /root/.claude/skills/playwright-cli/SKILL.md
+
+# 保留验证命令供后续测试
+CMD ["bash"]

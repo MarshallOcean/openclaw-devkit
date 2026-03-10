@@ -33,9 +33,9 @@ ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml
 ARG INSTALL_BROWSER=1
 
 LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
-  org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
-  org.opencontainers.image.title="OpenClaw Dev (2025 Standard)" \
-  org.opencontainers.image.description="OpenClaw gateway with 2025 toolchain (Node 22 LTS, Go 1.26, Python 3.13)"
+    org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
+    org.opencontainers.image.title="OpenClaw Dev (2025 Standard)" \
+    org.opencontainers.image.description="OpenClaw gateway with 2025 toolchain (Node 22 LTS, Go 1.26, Python 3.13)"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -134,22 +134,22 @@ RUN ARCH=$(dpkg --print-architecture) && \
 
 # Go 工具安装
 ARG GO_TOOLS="\
-  golang.org/x/tools/gopls@latest \
-  github.com/go-delve/delve/cmd/dlv@latest \
-  honnef.co/go/tools/cmd/staticcheck@latest \
-  github.com/securego/gosec/v2/cmd/gosec@latest \
-  golang.org/x/tools/cmd/goimports@latest \
-  github.com/air-verse/air@latest \
-  github.com/google/mock/mockgen@latest \
-  github.com/google/wire/cmd/wire@latest \
-  github.com/onsi/ginkgo/v2/ginkgo@latest"
+    golang.org/x/tools/gopls@latest \
+    github.com/go-delve/delve/cmd/dlv@latest \
+    honnef.co/go/tools/cmd/staticcheck@latest \
+    github.com/securego/gosec/v2/cmd/gosec@latest \
+    golang.org/x/tools/cmd/goimports@latest \
+    github.com/air-verse/air@latest \
+    github.com/google/mock/mockgen@latest \
+    github.com/google/wire/cmd/wire@latest \
+    github.com/onsi/ginkgo/v2/ginkgo@latest"
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg/mod \
     mkdir -p "${GOPATH}/bin" && \
     for tool in ${GO_TOOLS}; do \
-        echo "Installing $tool..." && \
-        go install "$tool"; \
+    echo "Installing $tool..." && \
+    go install "$tool"; \
     done
 
 # ============================================================
