@@ -1,10 +1,108 @@
 # OpenClaw DevKit 详细参考手册 (Reference Manual)
 
-本手册提供了 OpenClaw 开发工具箱套件的深度技术细节，补充了 `README.md` 中的精简信息。
+本手册提供深度技术细节，补充 `README.md` 中的精简信息。
 
 ---
 
-## 🛠️ 运维命令手册 (Maintenance Manual)
+## 📖 目录
+
+- [快速开始](#快速开始详细说明)
+- [运维命令](#运维命令手册)
+- [版本选择](#版本选择指南)
+- [环境变量](#环境变量详细说明)
+- [挂载配置](#挂载配置详解)
+- [存储持久化](#存储与持久化)
+- [Slack 集成](#slack-集成)
+- [架构设计](#架构与工作流)
+- [安全警告](#安全警告)
+- [常见问题](#常见问题)
+
+---
+
+## 快速开始详细说明
+
+### 方式一：预构建镜像（推荐）
+
+跳过本地构建，最快体验：
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/hrygo/openclaw-devkit.git
+cd openclaw-devkit
+
+# 2. 拉取镜像（可选，默认 make install 会自动选择）
+docker pull ghcr.io/hrygo/openclaw-devkit:latest-office  # 办公版
+# 或
+docker pull ghcr.io/hrygo/openclaw-devkit:latest          # 标准版
+# 或
+docker pull ghcr.io/hrygo/openclaw-devkit:latest-java     # Java 增强版
+
+# 3. 配置
+cp .env.example .env
+# 编辑 .env 设置 OPENCLAW_IMAGE
+
+# 4. 启动
+make up
+```
+
+### 方式二：本地构建
+
+需要更多时间，但可完全定制。**确保已安装 Docker (V2) 和 Make**。
+
+```bash
+# 1. 初始化项目
+cp .env.example .env
+make update             # 同步核心源码 (首次必做)
+
+# 2. 选择版本并构建
+# 标准版 (推荐)
+make install
+
+# Office 办公/自动化版
+make install office
+
+# Java 增强版
+make install java
+```
+
+> 💡 为了最佳连通性，建议在 `hosts` 中解析 `127.0.0.1 host.docker.internal` 以共享宿主机代理。
+
+---
+
+## 版本选择指南
+
+### 三个版本对比
+
+| 特性           | Standard (标准版) | Java Enhanced (增强版) |  Office (Pro 办公版)  |
+| :------------- | :---------------: | :--------------------: | :-------------------: |
+| 适用人群       |     全栈开发      |    Java 企业级开发     |   文案与办公自动化    |
+| 核心环境       | Node, Go, Python  |     同左 + JDK 21      |    Node 22, Python    |
+| AI Coding 助手 |    ✅ 完整内置     |       ✅ 完整内置       |    Pi-Coding-Agent    |
+| 网页自动化     |    Playwright     |       Playwright       | Playwright + Selenium |
+| 文档转换       |   Pandoc, LaTeX   |     Pandoc, LaTeX      | Pandoc, LaTeX (Full)  |
+| OCR 识别       |         ❌         |           ❌            | Tesseract-OCR (中/英) |
+| 图像/PDF 处理  |      Pandoc       |         Pandoc         | ImageMagick, Poppler  |
+| 数据分析       |         ❌         |           ❌            |     Pandas, Numpy     |
+| 工程工具       |     pnpm, Bun     |     Gradle, Maven      |       pnpm, Bun       |
+| 环境特点       |   轻量、聚焦 AI   |    深度集成审计工具    |  零门槛、全集成办公   |
+| 镜像大小       |       6.4GB       |         8.08GB         |         4.7GB         |
+
+### 切换版本
+
+```bash
+# 切换到 Office 办公版
+make rebuild office
+
+# 切换到 Java 增强版
+make rebuild java
+
+# 切换回标准版
+make rebuild
+```
+
+---
+
+## 🛠️ 运维命令手册
 
 | 命令分类       | 命令                  | 说明                                              |
 | :------------- | :-------------------- | :------------------------------------------------ |
@@ -118,28 +216,178 @@ OpenClaw 支持基于 **Commander-Worker (指挥官-执行者)** 模型的高级
  
 ---
 
-## 💾 存储与持久化 (Storage & Persistence)
+## 挂载配置详解
 
-OpenClaw DevKit 采用混合存储策略，以适应不同的开发与运行需求。
+> ⚠️ **注意**：下方「宿主机路径」列中的某些路径（如 `~/.gitconfig-hotplex`）仅为示例。你需要根据**自己的实际情况**修改 `docker-compose.yml` 中的对应路径。
 
-### 1. 具名卷 (Named Volumes)
-这些卷由 Docker 引擎直接管理（例如 `openclaw-state`，`openclaw-node-modules`）。
-*   **性能优异**：在 macOS/Windows 环境下，由于绕过了 Docker Desktop 的 gRPC-FUSE/Virtio-FS 同步层，读写性能远超绑定挂载。
-*   **持久性**：数据独立于容器生命周期。运行 `make down` 不会删除卷，只有运行 `make clean-volumes` 才会销毁。
-*   **初始化行为 (Gotcha)**：如果是**首次**创建并挂载卷，Docker 会将镜像内对应路径的内容拷贝到卷中。**但一旦卷已存在，镜像更新不会覆盖卷中已有的内容**。这在更新依赖 (node_modules) 时可能导致「代码是新的，依赖是旧的」反直觉问题，此时需手动删除旧卷。
+### 必需挂载（确保基本功能）
 
-### 2. 绑定挂载 (Bind Mounts)
-这些挂载将宿主机的绝对路径直接映射到容器内（例如 `workspace`，`.env`）。
-*   **实时可见**：你在宿主机上用 VS Code 做的修改会立即反应在容器内，反之亦然。
-*   **权限难题**：在 Linux 宿主机上，可能会遇到 UID/GID 不匹配导致的权限错误。DevKit 的 `docker-setup.sh` 脚本已针对常见场景做了自动修复。
+> ⚠️ 这些挂载使用 `.env` 中定义的变量 (`OPENCLAW_CONFIG_DIR`, `OPENCLAW_WORKSPACE_DIR`)，无需手动修改
 
-### 3. 注意事项与最佳实践
-*   **不要在绑定挂载中进行高频 IO**：如 `node_modules` 或 `git index` 操作，这在 Mac 上会非常缓慢。
-*   **数据迁移**：具名卷的数据通常藏在 Docker 的虚拟磁盘镜像中，导出数据建议先 `make shell` 进入容器后再进行拷贝。
+| 宿主机路径 (.env 变量)          | 容器内路径                       | 用途说明                           |
+| :------------------------------ | :------------------------------- | :--------------------------------- |
+| `${OPENCLAW_CONFIG_DIR}`        | `/home/node/.openclaw-seed:ro`   | 配置文件种子（只读，首次启动需要） |
+| `${OPENCLAW_WORKSPACE_DIR}`     | `/home/node/.openclaw/workspace` | 工作区文件（AI 工作目录，必需）    |
+| `openclaw-state` (Named Volume) | `/home/node/.openclaw`           | 持久化状态（会话、凭证、日志等）   |
+
+### 可选挂载（根据需求选择）
+
+| 宿主机路径                           | 容器内路径                        | 用途说明                                              |
+| :----------------------------------- | :-------------------------------- | :---------------------------------------------------- |
+| `~/.claude`                          | `/home/node/.claude`              | Claude Code 会话状态（需要共享会话时挂载）            |
+| `~/.gitconfig-xxx` (需调整)          | `/home/node/.gitconfig:ro`        | **独立 Git 身份**（给 AI 一个专属身份，与你主体区分） |
+| `openclaw-node-modules` (Volume)     | `/app/node_modules`               | Node.js 依赖缓存（加快二次启动）                      |
+| `openclaw-go-mod` (Volume)           | `/home/node/go/pkg/mod`           | Go 模块缓存（使用 Go 时挂载）                         |
+| `openclaw-playwright-cache` (Volume) | `/home/node/.cache/ms-playwright` | Playwright 浏览器缓存（使用浏览器自动化时挂载）       |
+
+### 为什么使用 `~/.gitconfig-xxx` 而非 `~/.gitconfig`？
+
+**核心原因**：给 OpenClaw 一个**独立的 Git 身份标识**，与你的主体开发环境区分开来。
+
+| 对比       | 你的主体环境      | OpenClaw 环境          |
+| :--------- | :---------------- | :--------------------- |
+| 配置文件   | `~/.gitconfig`    | `~/.gitconfig-hotplex` |
+| Git 用户名 | `YourName`        | `HotPlexBot01`         |
+| Git 邮箱   | `you@example.com` | `noreply@hotplex.dev`  |
+| 用途       | 日常开发          | AI 自动操作            |
+
+### 添加自定义挂载
+
+修改 `docker-compose.yml`，在 `openclaw-gateway` 服务的 `volumes` 区域添加新的挂载条目：
+
+```yaml
+services:
+  openclaw-gateway:
+    volumes:
+      # ... 现有挂载 ...
+
+      # 添加自定义挂载
+      - /你的/项目路径:/home/node/你的容器内路径:rw
+```
+
+### 常见扩展场景
+
+| 场景               | 挂载示例                                        |
+| :----------------- | :---------------------------------------------- |
+| 访问宿主机代码仓库 | `- ~/projects:/home/node/projects:rw`           |
+| 访问下载文件       | `- ~/Downloads:/home/node/Downloads:rw`         |
+| 访问敏感配置       | `- ~/.aws:/home/node/.aws:ro`（只读）           |
+| 共享团队配置       | `/shared/team-config:/home/node/team-config:rw` |
+
+### ⚠️ 注意事项
+
+1. **权限问题**：容器默认以 root 用户运行 (`user: "0:0"`)，写入的文件在宿主机可能显示为 root 所有权
+2. **路径格式**：Windows 路径需要使用 Docker 风格（如 `//c/Users/...`）或 WSL 路径
+3. **只读挂载**：对不需要写入的目录使用 `:ro` 后缀，更安全
+4. **重启生效**：修改挂载配置后需要 `make down && make up` 重新启动
 
 ---
 
-## ⚡ 内置技能 (Pre-installed Skills)
+## Slack 集成
+
+快速将 OpenClaw 引入 Slack 工作流：
+
+1. **导入配置**：在 Slack App 设置中导入 [`slack-manifest.json`](./slack-manifest.json)。
+2. **配置令牌**：在 `.env` 中填写 `SLACK_BOT_TOKEN` 和 `SLACK_APP_TOKEN`。
+3. **配对设备**：运行 `make pairing` 并按照终端提示操作。
+
+---
+
+## 架构与工作流
+
+### 项目架构图
+
+![架构图](assets/architecture.svg)
+
+### 核心文件解析
+
+- **`Makefile`**: 项目的总指挥部，封装了所有复杂运维逻辑。
+- **`docker-compose.yml`**: 编排中心，负责网络隔离与数据持久化。
+- **`Dockerfile*`**: 环境的基因组，定义了不同侧重的开发空间。
+- **`.openclaw_src/`**: 自动化引擎的核心阵地。
+- **`roles/`**: (可选) 智能体角色配置，建议通过软链接关联至 OpenClaw Workspace 以实现统一管理。
+- **`.env`**: 您的个性化中心，掌控代理、端口与安全令牌。
+
+---
+
+## 安全警告
+
+> ⚠️ **重要**：容器方案与宿主机直安装不可混用
+
+本项目通过 `~/.openclaw` 目录与宿主机共享配置。如果同时使用以下两种方案，存在**安全风险**：
+
+| 运行方式 | `gateway.bind` 要求 | 安全说明 |
+| :------- | :------------------ | :------- |
+| **Docker 容器** | `lan` (绑定 `0.0.0.0`) | ✅ **必须** — Docker 端口映射 `127.0.0.1:18789` 限制只允许本地访问 |
+| **宿主机直运行** | `loopback` (绑定 `127.0.0.1`) | ⚠️ 如果用 `lan` 会暴露到局域网 |
+
+### 为什么容器必须用 `lan`？
+
+Docker 端口映射 `127.0.0.1:18789:18789` 意味着宿主机收到的请求会转发到容器。如果容器内服务绑定 `127.0.0.1`，无法正确接收来自 Docker 网络层转发来的请求。必须绑定 `0.0.0.0` 才能正常工作。
+
+### 推荐做法
+
+1. **仅使用容器方案**（推荐）：保持 `gateway.bind = "lan"`，不要在宿主机安装 OpenClaw
+2. **需要宿主机直运行**：将配置改为 `gateway.bind = "loopback"`，并确保容器停止后再启动宿主机服务
+3. **两种都要用**：使用**独立的配置目录**（如 `~/.openclaw-docker` 和 `~/.openclaw-local`）
+
+```bash
+# 查看当前 bind 配置
+cat ~/.openclaw/openclaw.json | jq '.gateway.bind'
+
+# 修改为 loopback（宿主机直运行时）
+# 在配置文件中将 "bind": "lan" 改为 "bind": "loopback"
+```
+
+---
+
+## 全平台支持与分发 (Multi-Arch)
+
+本项目通过 GitHub Actions 实现了全平台镜像自动构建：
+- **支持架构**: `linux/amd64` (Intel/AMD), `linux/arm64` (Apple Silicon M1/M2/M3).
+- **分发渠道**: [GitHub Packages (GHCR)](https://github.com/orgs/openclaw/packages).
+
+> [!NOTE]
+> **本地编译限制**: 直接在 MacBook 上运行 `make build` 产生的镜像仅限 ARM 架构。若需分发给不同平台的服务器，请参考 GitHub Actions 配置或使用 `buildx` 进行交叉编译。
+
+---
+
+## 常见问题 (FAQ)
+
+<details>
+<summary><b>Q: 容器内网络连不通？</b></summary>
+A: 检查宿主机代理是否开启「允许局域网」。使用 <code>make test-proxy</code> 诊断。
+</details>
+
+<details>
+<summary><b>Q: 启动时报错 "Cannot find module '@mariozechner/pi-ai/oauth"？</b></summary>
+A: 这是因为预构建镜像中的依赖版本与源码不匹配。执行以下命令清理后重试：
+
+<pre><code>make down && docker volume rm openclaw-node-modules && make up</code></pre>
+
+<b>原因</b>：named volume 会持久化 <code>node_modules</code>，当源码更新后，依赖版本可能发生变化，但 volume 仍保留旧版本，导致模块找不到。
+</details>
+
+<details>
+<summary><b>Q: 如何手动更新 OpenClaw？</b></summary>
+A: 运行 <code>make update</code>。它会调用 GitHub API 自动对比并同步最新代码。
+</details>
+
+<details>
+<summary><b>Q: 配置文件在哪里？</b></summary>
+A: 容器内位于 <code>~/.openclaw/</code>，宿主机通过 <code>openclaw-state</code> 卷持久化。
+</details>
+
+<details>
+<summary><b>Q: 如何导出/备份配置？</b></summary>
+A: 运行 <code>make backup-config</code> 备份到宿主机 <code>~/.openclaw-backups/</code> 目录。
+</details>
+
+---
+
+<p align="center">
+  <a href="../README.md">← 返回主 README</a>
+</p>
 
 OpenClaw DevKit 镜像中预置了大量常用技能，旨在提供「开箱即用」的 AI 能力。
 

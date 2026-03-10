@@ -27,26 +27,35 @@
 
 ## 🚀 快速开始
 
-### 最快方式：预构建镜像 ⭐
+### 预构建镜像 ⭐（推荐）
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/hrygo/openclaw-devkit.git
 cd openclaw-devkit
 
-# 2. 初始化并启动
+# 2. 配置
 cp .env.example .env
-make install
 
-# 3. 访问 Web UI
+# 3. 拉取预构建镜像
+docker pull ghcr.io/hrygo/openclaw-devkit:latest
+
+# 4. 启动服务
+make up
+
+# 5. 访问 Web UI
 # 浏览器打开 http://127.0.0.1:18789
 
-# 4. 首次配置（必做）
+# 6. 首次配置（必做）
 make onboard
 ```
 
-> [!TIP]
-> 首次运行 `make install` 会自动选择最佳镜像版本（标准版/Office 办公版/Java 增强版）。
+**预构建镜像版本**（修改 `.env` 中的 `OPENCLAW_IMAGE`）：
+| 版本 | 镜像标签 |
+| :--- | :--- |
+| 标准版 | `ghcr.io/hrygo/openclaw-devkit:latest` |
+| Office 办公版 | `ghcr.io/hrygo/openclaw-devkit:latest-office` |
+| Java 增强版 | `ghcr.io/hrygo/openclaw-devkit:latest-java` |
 
 ---
 

@@ -29,55 +29,37 @@ It integrates an out-of-the-box toolchain designed to help developers quickly bu
 
 ---
 
-## 🚥 Quick Start (From Scratch)
+## 🚥 Quick Start
 
-If you are cloning this project for the first time, follow these steps to ensure a complete environment setup:
+### Prebuilt Image ⭐ (Recommended)
 
-### 1. Prerequisites
-Ensure the host machine has:
-- **Docker & Docker Compose (V2)**
-- **Make** (standard on most Unix-like systems)
-- **Network Proxy** (Optional, for accessing Claude/Google APIs in restricted environments)
-    > [!TIP]
-    > 💡 **Tip**: We recommend adding `127.0.0.1 host.docker.internal` to your host machine's `hosts` file. This allows both local and containerized development to share the same proxy configuration string (`http://host.docker.internal:port`), improving environment consistency.
-
-
-### 2. Initialize Environment
 ```bash
-# 0. Enter the directory
+# 1. Clone project
+git clone https://github.com/hrygo/openclaw-devkit.git
 cd openclaw-devkit
 
-# 1. Prepare environment variable file
+# 2. Configure
 cp .env.example .env
 
-# 2. Pull OpenClaw core source (Must do for the first time, or image build will fail)
-# The script automatically pulls the latest code from GitHub Releases and extracts it to .openclaw_src/
-make update
+# 3. Pull prebuilt image
+docker pull ghcr.io/hrygo/openclaw-devkit:latest
 
-# 3. Initialize Docker development image
-# Default Standard Edition
-make install
-
-# For Office Automation (Pro Edition)
-make install office
-
-# For Java Enhanced Edition
-make install java
-```
-
-### 3. Start & Verify
-```bash
-# 1. Start services
+# 4. Start services
 make up
 
-# 2. Verify connectivity (Optional)
-# Check connectivity to Google/Claude APIs from within the container
-make test-proxy
+# 5. Access Web UI
+# Open http://127.0.0.1:18789 in browser
+
+# 6. First-time setup (required)
+make onboard
 ```
 
-### 4. Access Interface
-- **Web Console**: [http://127.0.0.1:18789](http://127.0.0.1:18789)
-- **Debug Logs**: `make logs`
+**Prebuilt Image Versions** (modify `OPENCLAW_IMAGE` in `.env`):
+| Edition | Image Tag |
+| :--- | :--- |
+| Standard | `ghcr.io/hrygo/openclaw-devkit:latest` |
+| Office | `ghcr.io/hrygo/openclaw-devkit:latest-office` |
+| Java | `ghcr.io/hrygo/openclaw-devkit:latest-java` |
 
 ---
 
