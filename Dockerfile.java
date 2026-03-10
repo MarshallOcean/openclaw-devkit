@@ -46,8 +46,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
     curl wget jq git ripgrep fd-find bat httpie python3 python3-pip python3-venv build-essential pkg-config \
-    pandoc texlive-latex-base texlive-fonts-recommended xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    pandoc texlive-latex-base texlive-fonts-recommended xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji unzip file sqlite3 zip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -217,8 +217,8 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
     curl git openssl \
     pandoc texlive-latex-base texlive-fonts-recommended \
-    xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji \
     python3 python3-pip python3-venv unzip file sqlite3 zip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*

@@ -38,8 +38,8 @@ RUN apt-get update && \
     # 文档处理导出
     pandoc texlive-latex-base texlive-fonts-recommended \
     # 浏览器自动化依赖
-    xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji \
     # 基础工具
     unzip file sqlite3 zip && \
@@ -166,8 +166,8 @@ RUN apt-get update && \
     # 文档处理
     pandoc texlive-latex-base texlive-fonts-recommended \
     # 浏览器自动化依赖
-    xvfb libnss3 libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 \
-    libgbm1 libasound2t64 libatspi2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    xvfb libnss3 libatk-bridge-2.0-0t64 libdrm2 libxkbcommon0 \
+    libgbm1 libasound-2t64 libatspi-2.0-0t64 libxshmfence1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
     libdbus-1-3 libgtk-3-0t64 fonts-liberation fonts-noto-color-emoji \
     # 基础工具
     python3 python3-pip python3-venv unzip file sqlite3 zip && \
