@@ -34,13 +34,13 @@ jobs:
           cp Dockerfile.java .openclaw_src/Dockerfile.java
           cp Dockerfile.office .openclaw_src/Dockerfile.office
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" > version.txt
 
-      - name: Upload version
+      # 上传源码作为 artifact 供并行任务使用
+      - name: Upload source
         uses: actions/upload-artifact@v4
         with:
-          name: openclaw-version
-          path: version.txt
+          name: openclaw-source
+          path: .openclaw_src
           retention-days: 1
 
   # 并行构建三个 Docker 镜像
@@ -65,30 +65,11 @@ jobs:
       packages: write
 
     steps:
-      - name: Download version
+      - name: Download source
         uses: actions/download-artifact@v4
         with:
-          name: openclaw-version
-          path: .
-
-      - name: Read version
-        id: version
-        run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Fetch OpenClaw Source
-        run: |
-          REPO="openclaw/openclaw"
-          VERSION=$(cat version.txt)
-          echo "Building version: $VERSION"
-          URL="https://github.com/${REPO}/archive/refs/tags/${VERSION}.tar.gz"
-          mkdir -p .openclaw_src
-          curl -fsSL "$URL" | tar -xzC .openclaw_src --strip-components=1
-          cp Dockerfile .openclaw_src/Dockerfile
-          cp Dockerfile.java .openclaw_src/Dockerfile.java
-          cp Dockerfile.office .openclaw_src/Dockerfile.office
+          name: openclaw-source
+          path: .openclaw_src
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
