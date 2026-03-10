@@ -19,11 +19,15 @@
 # ------------------------------------------------------------------------------
 x-openclaw-common: &openclaw-common
   build:
-    context: .openclaw_src
-    dockerfile: ../Dockerfile
+    context: .
+    dockerfile: Dockerfile
     args:
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
+      DOCKER_MIRROR: ${DOCKER_MIRROR:-docker.io}
+      APT_MIRROR: ${APT_MIRROR:-deb.debian.org}
+      NPM_MIRROR: ${NPM_MIRROR:-}
+      PYTHON_MIRROR: ${PYTHON_MIRROR:-}
   image: ${OPENCLAW_IMAGE:-openclaw:dev}
   environment: &common-env
     HOST_UID: ${HOST_UID:-1000}
@@ -89,7 +93,7 @@ services:
   # ============================================================================
   openclaw-gateway:
     <<: *openclaw-common
-    user: "0:0" # Run as root to fix permissions
+    # user: "0:0" # Run as root to fix permissions - disabled due to macOS Docker limitations
     container_name: openclaw-gateway
     ports:
       - "127.0.0.1:18789:18789"
@@ -132,10 +136,8 @@ services:
       # 修改后执行: make down && make up
       # After modifying: make down && make up
       # -------------------------------------------------------------------------
-    command:
-      - "sh"
-      - "-c"
-      - "cp -rn /home/node/.openclaw-seed/* /home/node/.openclaw/ 2>/dev/null || true && jq 'del(.plugins.load.paths) | del(.plugins.installs)' /home/node/.openclaw/openclaw.json > /tmp/openclaw.json 2>/dev/null && [ -s /tmp/openclaw.json ] && mv /tmp/openclaw.json /home/node/.openclaw/openclaw.json || rm -f /tmp/openclaw.json && openclaw config set gateway.controlUi.allowedOrigins '[\"http://127.0.0.1:18789\"]' --strict-json && openclaw gateway --bind lan --port 18789"
+      # 移除复杂的 inline command，改用容器内置 entrypoint
+      # command: ["openclaw", "gateway", "--allow-unconfigured"]
     healthcheck: &common-healthcheck
       test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 30s
@@ -151,6 +153,7 @@ services:
   # ============================================================================
   openclaw-cli:
     <<: *openclaw-common
+    user: "0:0" # 同步 gateway，允许 entrypoint 修复权限
     container_name: openclaw-cli
     depends_on:
       openclaw-gateway:
@@ -176,10 +179,8 @@ services:
     # CLI 是交互式容器，不需要健康检查
     healthcheck:
       disable: true
-    entrypoint:
-      - "sh"
-      - "-c"
-      - "cp -rn /home/node/.openclaw-seed/* /home/node/.openclaw/ 2>/dev/null || true && jq 'del(.plugins.load.paths) | del(.plugins.installs)' /home/node/.openclaw/openclaw.json > /tmp/openclaw.json 2>/dev/null && [ -s /tmp/openclaw.json ] && mv /tmp/openclaw.json /home/node/.openclaw/openclaw.json || rm -f /tmp/openclaw.json && exec tail -f /dev/null"
+    # CLI 容器现在默认进入交互模式或由 Makefile 控制
+    command: [ "tail", "-f", "/dev/null" ]
     labels:
       - "openclaw.service=cli"
       - "openclaw.environment=dev"

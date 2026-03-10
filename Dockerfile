@@ -8,6 +8,10 @@ ARG GO_VERSION=1.26.1
 ARG GOLANGCI_LINT_VERSION=1.64.8
 ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml pandoc"
 ARG INSTALL_BROWSER=1
+ARG DOCKER_MIRROR=docker.io
+ARG APT_MIRROR=deb.debian.org
+ARG NPM_MIRROR=
+ARG PYTHON_MIRROR=
 
 # OpenClaw 开发环境定制镜像 (标准开发版)
 # 基于 debian:stable-slim，集成多语言开发栈
@@ -23,7 +27,7 @@ ARG INSTALL_BROWSER=1
 # ============================================================
 # 阶段 1：构建依赖 (builder) - 安装所有开发工具
 # ============================================================
-FROM debian:stable-slim AS builder
+FROM ${DOCKER_MIRROR}/library/debian:stable-slim AS builder
 
 # 定义所有构建参数 (确保每个阶段都能访问)
 ARG BUN_VERSION=1.3.10
@@ -31,15 +35,37 @@ ARG GO_VERSION=1.26.1
 ARG GOLANGCI_LINT_VERSION=1.64.8
 ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml pandoc"
 ARG INSTALL_BROWSER=1
-
-LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
-    org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
-    org.opencontainers.image.title="OpenClaw Dev (2025 Standard)" \
-    org.opencontainers.image.description="OpenClaw gateway with 2025 toolchain (Node 22 LTS, Go 1.26, Python 3.13)"
+ARG APT_MIRROR=deb.debian.org
+ARG NPM_MIRROR=
+ARG PYTHON_MIRROR=
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # ============================================================
+# 配置高速镜像和 Apt 重试
+# ============================================================
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
+    fi
+
+LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
+    org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
+    org.opencontainers.image.title="OpenClaw Dev (Standard)" \
+    org.opencontainers.image.description="OpenClaw gateway with modern toolchain (Node 22 LTS, Go 1.26, Python 3.13)"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ============================================================
+# 配置高速镜像和 Apt 重试
+# ============================================================
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
+    fi
+
 # 安装系统依赖和开发工具链
 # ============================================================
 RUN apt-get update && \
@@ -109,7 +135,11 @@ RUN ARCH=$(dpkg --print-architecture) && \
 ENV PATH="/root/.bun/bin:${PATH}"
 
 # pnpm (Node 包管理器)
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+    if [ -n "$NPM_MIRROR" ]; then \
+    npm config set registry "$NPM_MIRROR" && \
+    pnpm config set registry "$NPM_MIRROR"; \
+    fi
 
 # Playwright (浏览器自动化测试框架 + CLI)
 RUN npm install -g @playwright/test@latest @playwright/cli@latest
@@ -121,7 +151,10 @@ RUN npm install -g @anthropic-ai/claude-code@latest
 RUN npm install -g opencode-ai @mariozechner/pi-coding-agent
 
 # Python 包 (Office 处理 + 知识库工具)
-RUN pip3 install --break-system-packages --no-cache-dir $PYTHON_PACKAGES
+RUN if [ -n "$PYTHON_MIRROR" ]; then \
+    pip3 config set global.index-url "$PYTHON_MIRROR"; \
+    fi && \
+    pip3 install --break-system-packages --no-cache-dir $PYTHON_PACKAGES
 
 # ============================================================
 # Go 开发工具链 (golangci-lint, gopls, dlv, etc.)
@@ -158,16 +191,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 WORKDIR /app
 
 # 复制依赖声明文件（利用 Docker 层缓存）
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY ui/package.json ./ui/package.json
-COPY patches ./patches
-COPY scripts ./scripts
+COPY .openclaw_src/package.json .openclaw_src/pnpm-lock.yaml .openclaw_src/pnpm-workspace.yaml .openclaw_src/.npmrc ./
+COPY .openclaw_src/ui/package.json ./ui/package.json
+COPY .openclaw_src/patches ./patches
+COPY .openclaw_src/scripts ./scripts
 
 # 安装依赖
 RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
 # 复制源代码并构建
-COPY . .
+COPY .openclaw_src .
 
 # 构建应用
 RUN pnpm build
@@ -177,12 +210,25 @@ RUN pnpm ui:build
 # ============================================================
 # 阶段 2：运行时基础镜像 (base) - 仅安装运行时依赖
 # ============================================================
-FROM debian:stable-slim AS base
+FROM ${DOCKER_MIRROR}/library/debian:stable-slim AS base
 
+# 定义所有构建参数
 ARG BUN_VERSION=1.3.10
+ARG GO_VERSION=1.26.1
 ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml pandoc"
+ARG APT_MIRROR=deb.debian.org
+ARG NPM_MIRROR=
+ARG PYTHON_MIRROR=
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# 配置 Apt 重试以提高网络容错性
+# 配置 Apt 重试以提高网络容错性
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
+    fi
 
 # 安装基础工具 (curl, ca-certificates for HTTPS)
 RUN apt-get update && \
@@ -285,8 +331,9 @@ RUN mkdir -p /home/node/.claude/skills/playwright-cli/references && \
     https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/video-recording.md
 
 # 暴露 CLI
+COPY docker-entrypoint.sh /usr/local/bin/
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
-    && chmod 755 /app/openclaw.mjs
+    && chmod 755 /app/openclaw.mjs /usr/local/bin/docker-entrypoint.sh
 
 # 环境变量
 ENV NODE_ENV=production \
@@ -303,5 +350,8 @@ HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
 # 暴露端口
 EXPOSE 18789 18790
 
+# 启动入口
+ENTRYPOINT ["docker-entrypoint.sh"]
+
 # 启动命令
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
+CMD ["openclaw", "gateway", "--allow-unconfigured"]

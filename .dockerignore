@@ -1,0 +1,73 @@
+# Version Control
+.git/
+.gitignore
+.gitmodules
+.gitattributes
+.github/
+
+# IDE & Editors
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+
+# AI Agent Configs
+.agents/
+.agent/
+.gemini/
+.loki/
+brain/
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Build Outputs
+dist/
+build/
+out/
+target/
+node_modules/
+
+# Logs & Temporary
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Backup Files
+*.bak
+.openclaw-backups/
+
+# Tests & Docs (not needed in production image)
+tests/
+docs/
+*.md
+!README.md
+
+# OpenClaw Source (git submodule - handle separately)
+.openclaw_src/
+
+# OpenClaw Configs (runtime generated)
+openclaw*.json*
+
+# Docker related (not needed inside image)
+docker-compose*.yml
+Makefile
+.dockerignore
+
+# Misc
+slack-manifest.json
+docker-setup.sh
+update-source.sh

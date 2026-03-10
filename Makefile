@@ -22,7 +22,7 @@
         clean clean-volumes \
         exec cli pairing gateway-health test-proxy verify \
         backup-config restore-config \
-        update check-deps \
+        update check-deps onboard \
         java office dev
 
 # 默认目标
@@ -46,8 +46,13 @@ ifeq ($(IMAGE_NAME),)
 IMAGE_NAME := openclaw:dev
 endif
 
-# Docker 构建公共参数
-DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY)
+# Docker 构建公共参数 (提供安全默认值以支持回退到原始源)
+DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) \
+                     --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+                     --build-arg DOCKER_MIRROR=$(if $(DOCKER_MIRROR),$(DOCKER_MIRROR),docker.io) \
+                     --build-arg APT_MIRROR=$(if $(APT_MIRROR),$(APT_MIRROR),deb.debian.org) \
+                     --build-arg NPM_MIRROR=$(NPM_MIRROR) \
+                     --build-arg PYTHON_MIRROR=$(PYTHON_MIRROR)
 
 # ============================================================
 # 帮助信息 (现代分组版)
@@ -60,12 +65,14 @@ help: ## 显示完整帮助
 	@echo ""
 	@echo "  ⚡  快速开始 (首次使用)"
 	@printf "    %-22s %s\n" "make install" "安装并初始化环境"
-	@printf "    %-22s %s\n" "make up" "启动服务"
+	@printf "    %-22s %s\n" "make onboard" "交互式引导设置 (LLM/飞书等)"
+	@printf "    %-22s %s\n" "make up" "启动服务 (Zero-Config)"
 	@printf "    %-22s %s\n" "make down" "停止服务"
 	@echo ""
 	@echo "  🔄  生命周期管理"
 	@printf "    %-22s %s\n" "make install" "首次安装/初始化"
-	@printf "    %-22s %s\n" "make up" "启动服务"
+	@printf "    %-22s %s\n" "make up" "启动服务 (Zero-Config)"
+	@printf "    %-22s %s\n" "make onboard" "交互式引导设置 (LLM/飞书等)"
 	@printf "    %-22s %s\n" "make down" "停止服务"
 	@printf "    %-22s %s\n" "make restart" "重启服务"
 	@printf "    %-22s %s\n" "make status" "查看服务状态"
@@ -134,10 +141,16 @@ install: ## 首次安装/初始化环境
 	@$(call select_image,$(MAKECMDGOALS))
 	@echo "==> 使用镜像: $(IMAGE_NAME)"
 	@OPENCLAW_IMAGE=$(IMAGE_NAME) ./$(SETUP_SCRIPT)
+	@echo "✓ 安装完成。建议接着运行 'make onboard' 进行交互式配置。"
 
 up: ## 启动服务
 	@docker compose -f $(COMPOSE_FILE) up -d
 	@echo "✓ 已启动 (Web: http://127.0.0.1:$(GATEWAY_PORT)/)"
+	@echo "提示: 初次使用建议运行 'make onboard' 进行交互式配置。"
+
+onboard: ## 交互式引导设置 (LLM, 飞书, 频道等)
+	@echo "==> 启动交互式引导程序..."
+	@docker compose -f $(COMPOSE_FILE) run --rm openclaw-cli openclaw onboard
 
 down: ## 停止服务
 	@docker compose -f $(COMPOSE_FILE) down
@@ -289,7 +302,7 @@ $(call select_image,$(2))
 	docker build \
 		-t $(IMAGE_NAME) \
 		-f $(if $(filter dev,$(1)),Dockerfile,Dockerfile.$(1)) \
-		$(DOCKER_BUILD_ARGS) .openclaw_src
+		$(DOCKER_BUILD_ARGS) .
 endef
 
 define do_rebuild

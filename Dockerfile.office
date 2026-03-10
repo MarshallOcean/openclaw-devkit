@@ -3,6 +3,10 @@
 # ============================================================
 # 全局构建参数 (跨所有阶段)
 # ============================================================
+ARG DOCKER_MIRROR=docker.io
+ARG APT_MIRROR=deb.debian.org
+ARG NPM_MIRROR=
+ARG PYTHON_MIRROR=
 ARG DEBIAN_FRONTEND=noninteractive
 ARG BUN_VERSION=1.3.10
 ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml pytesseract pdf2image pillow pandas numpy requests aiohttp xlwings pypdf pymupdf reportlab docx2txt python-dateutil pytz selenium webdriver-manager"
@@ -25,12 +29,25 @@ ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml
 # ============================================================
 # 阶段 1：构建依赖 (builder) - 安装构建工具并构建应用
 # ============================================================
-FROM debian:stable-slim AS builder
+FROM ${DOCKER_MIRROR}/library/debian:stable-slim AS builder
 
 # 构建参数
+ARG APT_MIRROR=deb.debian.org
+ARG NPM_MIRROR=
+ARG PYTHON_MIRROR=
 ARG BUN_VERSION=1.3.10
+ARG DEBIAN_FRONTEND=noninteractive
 
 ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+
+# ============================================================
+# 配置高速镜像和 Apt 重试
+# ============================================================
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
+    fi
 
 # 安装构建依赖
 RUN apt-get update && \
@@ -66,21 +83,25 @@ RUN ARCH=$(dpkg --print-architecture) && \
 ENV PATH="/root/.bun/bin:${PATH}"
 
 # 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+    if [ -n "$NPM_MIRROR" ]; then \
+    npm config set registry "$NPM_MIRROR" && \
+    pnpm config set registry "$NPM_MIRROR"; \
+    fi
 
 WORKDIR /app
 
 # 复制依赖声明文件
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY ui/package.json ./ui/package.json
-COPY patches ./patches
-COPY scripts ./scripts
+COPY .openclaw_src/package.json .openclaw_src/pnpm-lock.yaml .openclaw_src/pnpm-workspace.yaml .openclaw_src/.npmrc ./
+COPY .openclaw_src/ui/package.json ./ui/package.json
+COPY .openclaw_src/patches ./patches
+COPY .openclaw_src/scripts ./scripts
 
 # 安装依赖
 RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
 
 # 复制源码并构建
-COPY . .
+COPY .openclaw_src .
 
 # 构建应用
 RUN pnpm build
@@ -90,19 +111,39 @@ RUN pnpm ui:build
 # ============================================================
 # 阶段 2：运行时基础镜像 (base) - 安装运行时依赖和办公工具
 # ============================================================
-FROM debian:stable-slim AS base
+FROM ${DOCKER_MIRROR}/library/debian:stable-slim AS base
 
 # 定义所有构建参数
 ARG BUN_VERSION=1.3.10
-ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml pandoc"
+ARG PYTHON_PACKAGES="python-pptx openpyxl python-docx beautifulsoup4 lxml pyyaml pytesseract pdf2image pillow pandas numpy requests aiohttp xlwings pypdf pymupdf reportlab docx2txt python-dateutil pytz selenium webdriver-manager"
+ARG APT_MIRROR=deb.debian.org
+ARG NPM_MIRROR=
+ARG PYTHON_MIRROR=
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# ============================================================
+# 配置高速镜像和 Apt 重试
+# ============================================================
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
+    fi
 
 # OCI 镜像元数据
 LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
     org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
-    org.opencontainers.image.title="OpenClaw Office" \
-    org.opencontainers.image.description="OpenClaw gateway for office automation (Node 22, Python, OCR, PDF Tools)"
+    org.opencontainers.image.title="OpenClaw Dev (Office)" \
+    org.opencontainers.image.description="OpenClaw gateway with modern toolchain (Node 22 LTS, Python 3.13, OCR, PDF Tools)"
+
+# 配置 Apt 重试以提高网络容错性
+# 配置 Apt 重试以提高网络容错性
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
+    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
+    fi
 
 # 安装基础工具
 RUN apt-get update && \
@@ -133,7 +174,11 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+    if [ -n "$NPM_MIRROR" ]; then \
+    npm config set registry "$NPM_MIRROR" && \
+    pnpm config set registry "$NPM_MIRROR"; \
+    fi
 
 # 安装 Playwright CLI 与 Pi-Coding-Agent
 RUN npm install -g @playwright/test@latest @playwright/cli@latest @mariozechner/pi-coding-agent
@@ -151,7 +196,10 @@ RUN ARCH=$(dpkg --print-architecture) && \
     rm -rf /tmp/bun.zip /tmp/bun-linux-${BUN_ARCH}
 
 # 安装 Python 办公自动化包
-RUN pip3 install --break-system-packages --no-cache-dir $PYTHON_PACKAGES
+RUN if [ -n "$PYTHON_MIRROR" ]; then \
+    pip3 config set global.index-url "$PYTHON_MIRROR"; \
+    fi && \
+    pip3 install --break-system-packages --no-cache-dir $PYTHON_PACKAGES
 
 # ============================================================
 # 阶段 3：最终镜像 (runtime) - 复制构建产物
@@ -209,8 +257,9 @@ RUN mkdir -p /home/node/.claude/skills/playwright-cli/references && \
     https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/references/video-recording.md
 
 # 暴露 CLI
+COPY docker-entrypoint.sh /usr/local/bin/
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
-    && chmod 755 /app/openclaw.mjs
+    && chmod 755 /app/openclaw.mjs /usr/local/bin/docker-entrypoint.sh
 
 # 环境变量
 ENV NODE_ENV=production \
@@ -227,5 +276,8 @@ HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
 # 暴露端口
 EXPOSE 18789 18790
 
+# 启动入口
+ENTRYPOINT ["docker-entrypoint.sh"]
+
 # 启动命令
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
+CMD ["openclaw", "gateway", "--allow-unconfigured"]
