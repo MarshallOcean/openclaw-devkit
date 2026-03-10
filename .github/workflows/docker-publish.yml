@@ -11,17 +11,17 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  # 首先准备源码 (所有镜像共用的步骤)
+  prepare:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Fetch OpenClaw Source
+        id: version
         run: |
           REPO="openclaw/openclaw"
           VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | jq -r '.tag_name')
@@ -33,7 +33,43 @@ jobs:
           cp Dockerfile .openclaw_src/Dockerfile
           cp Dockerfile.java .openclaw_src/Dockerfile.java
           cp Dockerfile.office .openclaw_src/Dockerfile.office
-          echo "Source and devkit Dockerfiles prepared in .openclaw_src"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # 上传源码作为 artifact 供并行任务使用
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          name: openclaw-source
+          path: .openclaw_src
+          retention-days: 1
+
+  # 并行构建三个 Docker 镜像
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - name: standard
+            dockerfile: Dockerfile
+            tags: ''
+          - name: java
+            dockerfile: Dockerfile.java
+            tags: '-java'
+          - name: office
+            dockerfile: Dockerfile.office
+            tags: '-office'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v4
+        with:
+          name: openclaw-source
+          path: .openclaw_src
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -61,36 +97,16 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Build and push Standard Image
+      - name: Build and push ${{ matrix.variant.name }} Image
         uses: docker/build-push-action@v5
         with:
           context: .openclaw_src
-          file: .openclaw_src/Dockerfile
+          file: .openclaw_src/${{ matrix.variant.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant.tags }}
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push Java Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .openclaw_src
-          file: .openclaw_src/Dockerfile.java
-          push: ${{ github.event_name != 'pull_request' }}
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:java
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push Office Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .openclaw_src
-          file: .openclaw_src/Dockerfile.office
-          push: ${{ github.event_name != 'pull_request' }}
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:office
           cache-from: type=gha
           cache-to: type=gha,mode=max
