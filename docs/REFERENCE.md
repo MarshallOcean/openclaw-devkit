@@ -16,7 +16,7 @@
 - [5. 数据持久化深探](#5-深度解析数据挂载与持久化) - 理解 Host Bind vs. Named Volumes。
 - [6. Roles 与开发流调优](#6-roles-与开发流优化) - 基于软链接的 Git 工作流最佳实践。
 - [7. 高级玩法：自定义镜像与扩展编排](#7-高级玩法自定义镜像与扩展编排) - 深入最佳实践无缝扩展底层架构。
-- [附：Slack 接入保姆级教程](SLACK_SETUP_BEGINNER.md) | [飞书 (Lark) 接入指南](#)
+- [附：Slack 接入保姆级教程](SLACK_SETUP_BEGINNER.md) | [飞书 (Lark) 接入指南](FEISHU_SETUP_BEGINNER.md)
 
 ### 🔴 架构篇：底层逻辑与安全基座
 - [8. 分层编排解析](#8-底层逻辑分层编排架构-layered-orchestration) - 揭秘 `docker-compose.build.yml` 的动态注入。
@@ -133,7 +133,7 @@ OpenClaw 支持通过 Socket Mode 接入多种办公平台。
 > 对于代码辅助这类高级生产力场景，**便捷体验**和**展现力**至关重要。区别于普通聊天工具，Slack 和飞书提供的**高阶富文本能力**（完美渲染 Markdown、代码块语法高亮、按键交互）能让查阅代码和确认 Diff 犹如在 IDE 中般自然。此外，它们原生支持的**长连接机制（Socket Mode / WebSocket）**更是极大降低了使用门槛——哪怕没有公网 IP、身处局域网深处，也彻底免去了配置复杂内网穿透（Webhook）的烦恼，真正实现了安全且极速的“开箱即联”。
 
 - **Slack (推荐)**：请参阅 [Slack 接入保姆级教程](SLACK_SETUP_BEGINNER.md)。
-- **飞书 (Lark)**：开发中，敬请期待。
+- **飞书 (Lark)**：请参阅 [飞书 (Lark) 接入指南](FEISHU_SETUP_BEGINNER.md)。
 
 ---
 

@@ -16,7 +16,7 @@ This manual is the definitive technical specification and operational guide for 
 - [5. Data Persistence Deep Dive](#5-deep-dive-data-mounting--persistence) - Understanding Host Binds vs. Named Volumes.
 - [6. Roles & Dev flow Optimization](#6-roles--dev-flow-optimization) - Git workflow best practices with symlinks.
 - [7. Advanced Usage: Custom Images & Composability](#7-advanced-usage-custom-images--composability) - Deep insights on seamless architectural extensibility.
-- [Appx: Slack Setup Beginner Guide](SLACK_SETUP_BEGINNER_en.md) | [Feishu (Lark) Guide](#)
+- [Appx: Slack Setup Beginner Guide](SLACK_SETUP_BEGINNER_en.md) | [Feishu (Lark) Guide](FEISHU_SETUP_BEGINNER_en.md)
 
 ### 🔴 Architect Tier: Core Logic & Security Foundation
 - [8. Layered Orchestration Analysis](#8-core-logic-layered-orchestration) - The mechanics of `docker-compose.build.yml` dynamic injection.
@@ -133,7 +133,7 @@ OpenClaw supports connecting to various office platforms via Socket Mode.
 > For code-assist scenarios, **convenience** and **expressiveness** are paramount. Unlike standard chat apps, Slack and Feishu offer **advanced rich text capabilities** (flawless Markdown rendering, highlighted code blocks, key interaction) that makes reading code and confirming diffs feel as natural as within an IDE. Furthermore, their native support for **persistent connections (Socket Mode / WebSocket)** drastically lowers the barrier to entry—even without a public IP or when deep inside an intranet firewall, it completely eliminates the headache of configuring complex Webhook tunnels, offering a truly "plug-and-play" seamless connection setup.
 
 - **Slack (Recommended)**: Refer to the [Slack Setup Beginner Guide](SLACK_SETUP_BEGINNER_en.md).
-- **Feishu (Lark)**: Development in progress, stay tuned.
+- **Feishu (Lark)**: Refer to the [Feishu (Lark) Guide](FEISHU_SETUP_BEGINNER_en.md).
 
 ---
 
