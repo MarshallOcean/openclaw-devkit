@@ -36,6 +36,9 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       should_build: ${{ steps.check.outputs.should_build }}
       image_name: ${{ steps.info.outputs.image_name }}
+      gh_version: ${{ steps.versions.outputs.gh_version }}
+      yq_version: ${{ steps.versions.outputs.yq_version }}
+      lg_version: ${{ steps.versions.outputs.lg_version }}
     steps:
       - name: Fetch repository info & version
         id: version
@@ -45,12 +48,35 @@ jobs:
           # 使用 GH_TOKEN 避免 API 速率限制
           RESPONSE=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/openclaw/openclaw/releases/latest")
           VERSION=$(echo "$RESPONSE" | jq -r '.tag_name')
-          
+
           if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
             echo "::warning title=API Error::Failed to fetch latest release, falling back to v0.0.0"
             VERSION="v0.0.0"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Fetch tool versions (gh, yq, lazygit)
+        id: versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 使用 GH_TOKEN 避免 API 速率限制
+          # GitHub CLI
+          GH_VERSION=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/cli/cli/releases/latest" | jq -r '.tag_name' | sed 's/^v//')
+          echo "gh_version=${GH_VERSION}" >> $GITHUB_OUTPUT
+
+          # yq
+          YQ_VERSION=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/mikefarah/yq/releases/latest" | jq -r '.tag_name')
+          echo "yq_version=${YQ_VERSION}" >> $GITHUB_OUTPUT
+
+          # lazygit
+          LG_VERSION=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | jq -r '.tag_name' | sed 's/^v//')
+          echo "lg_version=${LG_VERSION}" >> $GITHUB_OUTPUT
+
+          echo "Fetched versions: gh=${GH_VERSION}, yq=${YQ_VERSION}, lg=${LG_VERSION}"
 
       - name: Normalize Image Name
         id: info
@@ -158,6 +184,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            GH_VERSION=${{ needs.prepare.outputs.gh_version }}
+            YQ_VERSION=${{ needs.prepare.outputs.yq_version }}
+            LG_VERSION=${{ needs.prepare.outputs.lg_version }}
 
   # 核心构建阶段 - 变体镜像 (Go, Java, Office)
   build-variants:

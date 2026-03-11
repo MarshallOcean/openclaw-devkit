@@ -36,6 +36,10 @@ ARG INSTALL_BROWSER=1
 ARG APT_MIRROR=deb.debian.org
 ARG NPM_MIRROR=
 ARG PYTHON_MIRROR=
+# GitHub CLI, yq, lazygit 版本 (通过 CI 传入以避免 API 速率限制)
+ARG GH_VERSION=
+ARG YQ_VERSION=
+ARG LG_VERSION=
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -92,10 +96,12 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
-# GitHub CLI 最新版
+# GitHub CLI (版本通过 build-arg 传入避免 API 限流)
 # ============================================================
 RUN ARCH=$(dpkg --print-architecture) && \
-    GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name' | sed 's/^v//') && \
+    if [ -z "$GH_VERSION" ]; then \
+        GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name' | sed 's/^v//'); \
+    fi && \
     curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.deb" -o /tmp/gh.deb && \
     apt-get update && apt-get install -y /tmp/gh.deb && \
     rm /tmp/gh.deb && \
@@ -103,19 +109,23 @@ RUN ARCH=$(dpkg --print-architecture) && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # ============================================================
-# 专家工具下载 (uv, yq, just, lazygit)
+# 专家工具下载 (uv, yq, just, lazygit) (版本通过 build-arg 传入避免 API 限流)
 # ============================================================
 RUN ARCH=$(dpkg --print-architecture) && \
     # uv (Python 极速版)
     curl -fsSL https://astral.sh/uv/install.sh | sh && \
     # yq (YAML 专家)
-    YQ_VERSION=$(curl -fsSL https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r '.tag_name') && \
+    if [ -z "$YQ_VERSION" ]; then \
+        YQ_VERSION=$(curl -fsSL https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r '.tag_name'); \
+    fi && \
     curl -fsSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${ARCH}" -o /usr/local/bin/yq && \
     chmod +x /usr/local/bin/yq && \
     # just (任务运行器)
     curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin && \
     # lazygit (Git TUI)
-    LG_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | sed 's/^v//') && \
+    if [ -z "$LG_VERSION" ]; then \
+        LG_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | sed 's/^v//'); \
+    fi && \
     curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin lazygit
 
 # ============================================================
