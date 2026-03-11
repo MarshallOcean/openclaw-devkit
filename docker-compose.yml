@@ -27,8 +27,8 @@ x-openclaw-common: &openclaw-common
     # Required for accessing Google and Claude API from restricted network environments
     # Ports: 7897 (HTTP proxy), 15721 (Claude API proxy)
     # ─────────────────────────────────────────────────────────────────
-    HTTP_PROXY: http://host.docker.internal:7897
-    HTTPS_PROXY: http://host.docker.internal:7897
+    HTTP_PROXY: ${HTTP_PROXY:-}
+    HTTPS_PROXY: ${HTTPS_PROXY:-}
     NO_PROXY: localhost,127.0.0.1,host.docker.internal,.local,.internal
     # ─────────────────────────────────────────────────────────────────
     # Claude API Configuration
