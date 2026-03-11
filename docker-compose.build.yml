@@ -1,0 +1,31 @@
+# ==============================================================================
+# OpenClaw Docker Compose Build Configuration
+# ==============================================================================
+# This file is intended to be merged with docker-compose.yml via the COMPOSE_FILE
+# environment variable in .env when local building is required.
+# ==============================================================================
+
+services:
+  openclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        DOCKER_MIRROR: ${DOCKER_MIRROR:-docker.io}
+        APT_MIRROR: ${APT_MIRROR:-deb.debian.org}
+        NPM_MIRROR: ${NPM_MIRROR:-}
+        PYTHON_MIRROR: ${PYTHON_MIRROR:-}
+
+  openclaw-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        DOCKER_MIRROR: ${DOCKER_MIRROR:-docker.io}
+        APT_MIRROR: ${APT_MIRROR:-deb.debian.org}
+        NPM_MIRROR: ${NPM_MIRROR:-}
+        PYTHON_MIRROR: ${PYTHON_MIRROR:-}

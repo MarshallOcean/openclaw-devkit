@@ -54,35 +54,39 @@
 
 ## 🚀 快速开始
 
-### 预构建镜像 ⭐（推荐）
+### 1. 标准安装 ⭐（推荐 - 极速模式）
+
+适用于大多数用户，直接从 GitHub 注册表拉取经过优化的预构建镜像，**无需本地编译**。
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/hrygo/openclaw-devkit.git
 cd openclaw-devkit
 
-# 2. 配置
-cp .env.example .env
+# 2. 一键安装并初始化 (极速模式)
+make install
 
-# 3. 拉取预构建镜像
-docker pull ghcr.io/hrygo/openclaw-devkit:latest
-
-# 4. 启动服务
-make up
-
-# 5. 访问 Web UI
-# 浏览器打开 http://127.0.0.1:18789
-
-# 6. 首次配置（必做）
+# 3. 首次配置（必做）
 make onboard
+
+# 4. 访问 Web UI
+# 浏览器打开 http://127.0.0.1:18789
 ```
 
-**预构建镜像版本**（修改 `.env` 中的 `OPENCLAW_IMAGE`）：
-| 版本 | 镜像标签 |
-| :--- | :--- |
-| 标准版 | `ghcr.io/hrygo/openclaw-devkit:latest` |
-| Office 办公版 | `ghcr.io/hrygo/openclaw-devkit:latest-office` |
-| Java 增强版 | `ghcr.io/hrygo/openclaw-devkit:latest-java` |
+> [!NOTE]
+> `make install` 会自动完成：创建数据目录、生成 `.env` 配置、拉取最新镜像以及修复宿主机权限。
+
+---
+
+### 2. 版本选择
+
+如果您需要特定环境，可以在安装时指定（或修改 `.env` 中的 `OPENCLAW_IMAGE`）：
+
+| 版本 | 安装命令 | 说明 |
+| :--- | :--- | :--- |
+| **标准版** | `make install` | 默认版本 (Node + Go + Python + Playwright) |
+| **Office 版** | `make install office` | 含 pandoc + LaTeX + OCR |
+| **Java 版** | `make install java` | 含 JDK 25 + Gradle + Maven |
 
 ---
 

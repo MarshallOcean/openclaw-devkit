@@ -54,35 +54,39 @@
 
 ## 🚀 Quick Start
 
-### Prebuilt Image ⭐ (Recommended)
+### 1. Standard Installation ⭐ (Recommended - Fast Mode)
+
+Suitable for most users, pulls optimized pre-built images from the GitHub Registry—**no local compilation required**.
 
 ```bash
 # 1. Clone project
 git clone https://github.com/hrygo/openclaw-devkit.git
 cd openclaw-devkit
 
-# 2. Configure
-cp .env.example .env
+# 2. One-click install & initialize (Fast Mode)
+make install
 
-# 3. Pull prebuilt image
-docker pull ghcr.io/hrygo/openclaw-devkit:latest
-
-# 4. Start services
-make up
-
-# 5. Access Web UI
-# Open http://127.0.0.1:18789 in browser
-
-# 6. First-time setup (required)
+# 3. First-time setup (Required)
 make onboard
+
+# 4. Access Web UI
+# Open http://127.0.0.1:18789 in browser
 ```
 
-**Prebuilt Image Versions** (modify `OPENCLAW_IMAGE` in `.env`):
-| Edition  | Image Tag                                     |
-| :------- | :-------------------------------------------- |
-| Standard | `ghcr.io/hrygo/openclaw-devkit:latest`        |
-| Office   | `ghcr.io/hrygo/openclaw-devkit:latest-office` |
-| Java     | `ghcr.io/hrygo/openclaw-devkit:latest-java`   |
+> [!NOTE]
+> `make install` automates: directory creation, `.env` config generation, pulling the latest images, and fixing host permissions.
+
+---
+
+### 2. Version Choice
+
+If you need a specific environment, specify it during installation (or modify `OPENCLAW_IMAGE` in `.env`):
+
+| Edition | Installation Command | Description |
+| :--- | :--- | :--- |
+| **Standard** | `make install` | Default version (Node + Go + Python + Playwright) |
+| **Office** | `make install office` | Includes pandoc + LaTeX + OCR |
+| **Java** | `make install java` | Includes JDK 25 + Gradle + Maven |
 
 ---
 

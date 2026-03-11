@@ -18,16 +18,6 @@
 # YAML Anchors for DRY Configuration
 # ------------------------------------------------------------------------------
 x-openclaw-common: &openclaw-common
-  build:
-    context: .
-    dockerfile: Dockerfile
-    args:
-      HTTP_PROXY: ${HTTP_PROXY:-}
-      HTTPS_PROXY: ${HTTPS_PROXY:-}
-      DOCKER_MIRROR: ${DOCKER_MIRROR:-docker.io}
-      APT_MIRROR: ${APT_MIRROR:-deb.debian.org}
-      NPM_MIRROR: ${NPM_MIRROR:-}
-      PYTHON_MIRROR: ${PYTHON_MIRROR:-}
   image: ${OPENCLAW_IMAGE:-openclaw:dev}
   environment: &common-env
     HOST_UID: ${HOST_UID:-1000}

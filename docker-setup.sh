@@ -18,17 +18,44 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="${OPENCLAW_IMAGE:-openclaw:dev}"
-COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
-DEV_COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
+# COMPOSE_FILE is managed by .env for flexibility
+# EXTRA_COMPOSE_FILE still used for on-the-fly mounts
 EXTRA_COMPOSE_FILE="$ROOT_DIR/docker-compose.dev.extra.yml"
 
 # ============================================================
-# 工具函数 (借鉴自 docker-setup.sh)
+# Visual Styling (Whitepaper Grade)
 # ============================================================
 
+# ANSI Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Output Prefixes
+INFO="${BLUE}${BOLD}==>${NC}"
+SUCCESS="${GREEN}${BOLD}✓${NC}"
+WARN="${YELLOW}${BOLD}⚠${NC}"
+ERROR="${RED}${BOLD}✖${NC}"
+
 fail() {
-  echo "ERROR: $*" >&2
+  echo -e "${ERROR}${RED}错误: $*${NC}" >&2
   exit 1
+}
+
+warn() {
+  echo -e "${WARN}${YELLOW}警告: $*${NC}" >&2
+}
+
+success() {
+  echo -e "${SUCCESS}${GREEN}$*${NC}"
+}
+
+info() {
+  echo -e "${INFO} $*"
 }
 
 require_cmd() {
@@ -241,7 +268,7 @@ while [[ $# -gt 0 ]]; do
 OpenClaw 开发环境 Docker 部署脚本
 
 用法:
-  ./docker-dev-setup.sh [选项]
+  ./docker-setup.sh [选项]
 
 选项:
   --no-browser    跳过浏览器安装（减少约 300MB）
@@ -313,13 +340,10 @@ if contains_disallowed_chars "$RAW_EXTRA_MOUNTS"; then
   fail "OPENCLAW_EXTRA_MOUNTS cannot contain control characters."
 fi
 
-# 导出变量供 docker compose 使用
-export OPENCLAW_CONFIG_DIR
-export OPENCLAW_WORKSPACE_DIR
-export OPENCLAW_GATEWAY_PORT
-export OPENCLAW_BRIDGE_PORT
-export OPENCLAW_GATEWAY_BIND
+OPENCLAW_SKIP_BUILD="${OPENCLAW_SKIP_BUILD:-true}"  # 默认使用极速模式 (跳过构建)
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}" # 默认编排文件
 export OPENCLAW_IMAGE="$IMAGE_NAME"
+# COMPOSE_FILE logic handled via .env upsert
 
 # ============================================================
 # 创建目录 (借鉴 docker-setup.sh 的完整目录树)
@@ -343,7 +367,7 @@ if [[ -z "${OPENCLAW_GATEWAY_TOKEN:-}" ]]; then
   EXISTING_CONFIG_TOKEN="$(read_config_gateway_token || true)"
   if [[ -n "$EXISTING_CONFIG_TOKEN" ]]; then
     OPENCLAW_GATEWAY_TOKEN="$EXISTING_CONFIG_TOKEN"
-    echo "复用配置文件中的 Gateway Token: $OPENCLAW_CONFIG_DIR/openclaw.json"
+    info "复用配置文件中的 Gateway Token: ${CYAN}$OPENCLAW_CONFIG_DIR/openclaw.json${NC}"
   elif command -v openssl >/dev/null 2>&1; then
     OPENCLAW_GATEWAY_TOKEN="$(openssl rand -hex 32)"
   else
@@ -356,32 +380,33 @@ export OPENCLAW_GATEWAY_TOKEN
 # 构建镜像
 # ============================================================
 
-echo "==> 构建开发环境镜像: $IMAGE_NAME"
-if [[ ! -f "$ROOT_DIR/.openclaw_src/package.json" ]]; then
-  echo ""
-  echo "❌ 错误: 在 .openclaw_src 目录中未找到项目源码 (package.json)。"
-  echo "提示: 如果您是首次克隆本项目，请先运行以下命令拉取源码："
-  echo ""
-  echo "    make update"
-  echo ""
-  exit 1
-fi
+info "检查/拉取开发环境镜像: ${CYAN}$IMAGE_NAME${NC}"
+if is_truthy_value "${OPENCLAW_SKIP_BUILD:-}"; then
+  info "模式: ${BOLD}极速模式 (Fast Mode)${NC} - 正在拉取同步..."
+  docker pull "$IMAGE_NAME"
+else
+  info "模式: ${BOLD}开发模式 (Dev Mode)${NC} - 正在本地构建..."
+  if [[ ! -f "$ROOT_DIR/.openclaw_src/package.json" ]]; then
+    echo ""
+    fail "在 .openclaw_src 目录中未找到项目源码 (package.json)。\n提示: 请先运行 ${BOLD}make update${NC} 拉取源码。"
+  fi
 
-# 选择 Dockerfile
-DOCKERFILE_PATH="$ROOT_DIR/Dockerfile"
-if [[ "$IMAGE_NAME" == *"-java"* ]]; then
-  DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.java"
-elif [[ "$IMAGE_NAME" == *"pro"* ]]; then
-  DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.office"
-fi
+  # 选择 Dockerfile
+  DOCKERFILE_PATH="$ROOT_DIR/Dockerfile"
+  if [[ "$IMAGE_NAME" == *"-java"* ]]; then
+    DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.java"
+  elif [[ "$IMAGE_NAME" == *"office"* ]]; then
+    DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.office"
+  fi
 
-docker build \
-  -t "$IMAGE_NAME" \
-  -f "$DOCKERFILE_PATH" \
-  --build-arg "INSTALL_BROWSER=${INSTALL_BROWSER}" \
-  --build-arg "HTTP_PROXY=${HTTP_PROXY:-}" \
-  --build-arg "HTTPS_PROXY=${HTTPS_PROXY:-}" \
-  "$ROOT_DIR/.openclaw_src"
+  docker build \
+    -t "$IMAGE_NAME" \
+    -f "$DOCKERFILE_PATH" \
+    --build-arg "INSTALL_BROWSER=${INSTALL_BROWSER}" \
+    --build-arg "HTTP_PROXY=${HTTP_PROXY:-}" \
+    --build-arg "HTTPS_PROXY=${HTTPS_PROXY:-}" \
+    "$ROOT_DIR/.openclaw_src"
+fi
 
 # ============================================================
 # 生成额外的 compose 配置 (如果有 HOME_VOLUME 或 EXTRA_MOUNTS)
@@ -418,8 +443,7 @@ fi
 # ============================================================
 
 ENV_FILE="$ROOT_DIR/.env"
-echo ""
-echo "==> 更新环境变量文件"
+info "同步环境变量文件: ${CYAN}$ENV_FILE${NC}"
 upsert_env "$ENV_FILE" \
   OPENCLAW_CONFIG_DIR \
   OPENCLAW_WORKSPACE_DIR \
@@ -429,8 +453,10 @@ upsert_env "$ENV_FILE" \
   OPENCLAW_GATEWAY_TOKEN \
   OPENCLAW_IMAGE \
   OPENCLAW_EXTRA_MOUNTS \
-  OPENCLAW_HOME_VOLUME
-echo "已更新: $ENV_FILE"
+  OPENCLAW_HOME_VOLUME \
+  OPENCLAW_SKIP_BUILD \
+  COMPOSE_FILE
+success "环境变量同步完成"
 
 # ============================================================
 # 修复权限 (借鉴 docker-setup.sh 的 -xdev 方式)
@@ -440,7 +466,7 @@ echo ""
 # 修复数据目录权限
 # Use -xdev to restrict chown to the config-dir mount only
 # 使用 root 用户修复权限，但限制在 .openclaw 目录内
-docker compose -f "$DEV_COMPOSE_FILE" run --rm --user root --entrypoint sh openclaw-cli -c \
+docker compose run --rm --user root --entrypoint sh openclaw-cli -c \
   'find /home/node/.openclaw -xdev -exec chown node:node {} + 2>/dev/null || true; \
    [ -d /home/node/.openclaw/workspace/.openclaw ] && chown -R node:node /home/node/.openclaw/workspace/.openclaw || true'
 
@@ -449,7 +475,7 @@ docker compose -f "$DEV_COMPOSE_FILE" run --rm --user root --entrypoint sh openc
 # ============================================================
 
 run_cli() {
-  docker compose -f "$DEV_COMPOSE_FILE" run --rm --entrypoint "" openclaw-cli node dist/index.js "$@"
+  docker compose run --rm --entrypoint "" openclaw-cli node dist/index.js "$@"
 }
 
 # ============================================================
@@ -457,74 +483,43 @@ run_cli() {
 # ============================================================
 
 echo ""
-echo "==> 配置 Gateway"
-echo "Docker 开发环境配置:"
-echo "  Gateway 模式: local"
-echo "  绑定模式: $OPENCLAW_GATEWAY_BIND"
-echo "  Token: $OPENCLAW_GATEWAY_TOKEN"
-echo ""
-run_cli config set gateway.mode local >/dev/null && echo "✓ gateway.mode = local"
-run_cli config set gateway.bind "$OPENCLAW_GATEWAY_BIND" >/dev/null && echo "✓ gateway.bind = $OPENCLAW_GATEWAY_BIND"
-
-# ============================================================
-# 启动 Gateway
-# ============================================================
-
-echo ""
-echo "==> 启动 Gateway"
-docker compose -f "$DEV_COMPOSE_FILE" up -d openclaw-gateway
+info "部署网络服务..."
+docker compose up -d openclaw-gateway
 
 # ============================================================
 # 完成提示
 # ============================================================
 
-COMPOSE_HINT="docker compose -f ${DEV_COMPOSE_FILE}"
+COMPOSE_HINT="docker compose"
 if [[ -f "$EXTRA_COMPOSE_FILE" ]]; then
   COMPOSE_HINT+=" -f ${EXTRA_COMPOSE_FILE}"
 fi
 
 cat <<END
 
-============================================================
-  OpenClaw 开发环境已启动
-============================================================
+${BLUE}${BOLD}============================================================${NC}
+  ${GREEN}${BOLD}OpenClaw 开发环境已就绪${NC}
+${BLUE}${BOLD}============================================================${NC}
 
 访问地址:
-  http://127.0.0.1:${OPENCLAW_GATEWAY_PORT}/
+  ${CYAN}http://127.0.0.1:${OPENCLAW_GATEWAY_PORT}/${NC}
 
 Gateway Token:
-  ${OPENCLAW_GATEWAY_TOKEN}
+  ${YELLOW}${OPENCLAW_GATEWAY_TOKEN}${NC}
 
 配置目录:
-  ${OPENCLAW_CONFIG_DIR}
-
-工作区目录:
-  ${OPENCLAW_WORKSPACE_DIR}
+  ${BOLD}${OPENCLAW_CONFIG_DIR}${NC}
 
 常用命令:
-  # 查看日志
-  ${COMPOSE_HINT} logs -f openclaw-gateway
-
-  # 进入容器 shell
-  ${COMPOSE_HINT} exec openclaw-gateway bash
-
-  # 运行 CLI 命令
-  ${COMPOSE_HINT} run --rm openclaw-cli --help
-
-  # 健康检查
-  ${COMPOSE_HINT} exec openclaw-gateway \\
-    node dist/index.js health --token "\${OPENCLAW_GATEWAY_TOKEN}"
-
-  # 停止服务
-  ${COMPOSE_HINT} down
+  ${INFO}查看实时日志:  ${BOLD}${COMPOSE_HINT} logs -f openclaw-gateway${NC}
+  ${INFO}进入内部 Shell: ${BOLD}${COMPOSE_HINT} exec openclaw-gateway bash${NC}
+  ${INFO}交互式配置引导:  ${BOLD}make onboard${NC}
 
 包含的开发工具:
-  ✓ Node.js 22 + pnpm + Bun
-  ✓ Python 3 + pip (含 python-docx, openpyxl, python-pptx, pytesseract, pdf2image)
-  ✓ Go (golang-go) [仅限标准版与 Java 版]
-  ✓ JDK 25 [仅限 Java 版]
-  ✓ Chromium/Playwright (浏览器自动化)
-  ✓ Pandoc + LaTeX (文档处理)
-  ✓ OCR & ImageMagick [仅限 Office 版]
-  ✓ ripgrep, jq, fd-find, bat, httpie 等现代 CLI 工具
+  ${SUCCESS}Node.js 22 + pnpm + Bun
+  ${SUCCESS}Python 3 + Office 自动化套件
+  ${SUCCESS}Go & JDK 25 (根据版本选择)
+  ${SUCCESS}Chromium/Playwright & Pandoc & LaTeX
+
+${BLUE}OpenClaw Team | 2026 技术规格书${NC}
 END
