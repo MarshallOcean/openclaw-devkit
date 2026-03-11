@@ -1,4 +1,4 @@
-# OpenClaw DevKit 技术白皮书与用户手册 (2026 工业级版)
+# OpenClaw DevKit 技术白皮书与用户手册
 
 本手册是 OpenClaw DevKit 的权威技术规格书与操作指南。它不仅为**初学者**提供零门槛的快速入门路径，更记录了为**架构师与资深开发者**设计的底层逻辑、安全模型与高性能编排机制。
 
@@ -73,7 +73,7 @@ make onboard
 ### 4. 版本一键切换 (精准规格表)
 DevKit 严选三套垂直工具链，以应对不同的开发场景：
 
-| 规格名称 | 镜像大小 (Compressed) | 软件栈版本 (2026 Baseline) | 核心场景 |
+| 规格名称 | 镜像大小 (Compressed) | 软件栈版本 (Baseline) | 核心场景 |
 | :--- | :--- | :--- | :--- |
 | **Standard** | **~2.21 GB** | Node 22, Go 1.2x, Python 3.12, Bun | 全栈开发、AI 插件编写、自动化脚本 |
 | **Office** | **~4.04 GB** | Standard + Pandoc, LaTeX, Playwright | 文档转换、网页爬虫、OCR 办公自动化 |
@@ -159,7 +159,7 @@ A: 请检查 <code>OPENCLAW_CONFIG_DIR</code> 的实际挂载路径。默认在 
 
 ## ⚙️ 全量技术参数矩阵 (Advanced Tuning)
 
-| 变量分类 | 变量名 | 推荐值 | 工业级内涵 |
+| 变量分类 | 变量名 | 推荐值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | **编排核心** | `COMPOSE_FILE` | `docker-compose.yml` | 定义编排分层。启用本地构建需加上 `:docker-compose.build.yml` |
 | | `OPENCLAW_SKIP_BUILD`| `true` | 开关：`true` (极速模式拉镜像), `false` (开发模式本地构建) |
@@ -181,6 +181,6 @@ A: 请检查 <code>OPENCLAW_CONFIG_DIR</code> 的实际挂载路径。默认在 
 ---
 
 <p align="center">
-  <b>OpenClaw Team | 2026 技术规格书</b><br>
+  <b>OpenClaw Team | 技术规格书</b><br>
   <i>Empowering Human-AI Symbiosis Through Precise Engineering</i>
 </p>

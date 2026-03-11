@@ -1,4 +1,4 @@
-# OpenClaw DevKit Technical Whitepaper & User Manual (2026 Industrial Grade)
+# OpenClaw DevKit Technical Whitepaper & User Manual
 
 This manual is the definitive technical specification and operational guide for the OpenClaw DevKit. It provides a zero-friction entry path for **beginners** and documents the underlying logic, security models, and high-performance orchestration mechanisms designed for **architects and senior developers**.
 
@@ -73,7 +73,7 @@ make onboard
 ### 4. Flavor Switching (Technical Matrix)
 DevKit offers three curated toolchains to handle different development scenarios:
 
-| Flavor Name | Image Size (Compressed) | Software Stack (2026 Baseline) | Core use Case |
+| Flavor Name | Image Size (Compressed) | Software Stack (Baseline) | Core use Case |
 | :--- | :--- | :--- | :--- |
 | **Standard** | **~2.21 GB** | Node 22, Go 1.2x, Python 3.12, Bun | Full-stack dev, AI plugin writing, automation scripts. |
 | **Office** | **~4.04 GB** | Standard + Pandoc, LaTeX, Playwright | Doc conversion, web scraping, OCR, office automation. |
@@ -172,6 +172,6 @@ A: Please verify the actual mount path of <code>OPENCLAW_CONFIG_DIR</code>. It d
 ---
 
 <p align="center">
-  <b>OpenClaw Team | 2026 Technical Whitepaper</b><br>
+  <b>OpenClaw Team | Technical Whitepaper</b><br>
   <i>Empowering Human-AI Symbiosis Through Precise Engineering</i>
 </p>
