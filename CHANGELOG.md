@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.2] - 2026-03-11
+
+### Fixed
+- **Docker Permission Fix (macOS)**: Combined `user: "0:0"` (root) with entrypoint `chown` to resolve host-mounted volume permission issues (PR #4).
+- **Onboarding Logic**: Updated automatic initialization to use the new `onboard --accept-risk` command flag.
+
+### Improved
+- **Smart CI Pipeline**: Enhanced GitHub Actions with path filtering and image-existence checks to skip unnecessary builds.
+- **CI Reliability**: Standardized lowercased image names and added concurrency management to prevent redundant workflow runs.
+- **Workflow Auditing**: Applied GitHub Actions best practices including Token protection and least-privilege permissions.
+
 ## [v1.2.1] - 2026-03-10
 
 ### Added
