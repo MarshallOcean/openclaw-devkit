@@ -257,6 +257,8 @@ jobs:
           no-cache: true
           build-args: |
             BASE_IMAGE=${{ env.REGISTRY }}/${{ needs.prepare.outputs.image_name }}:${{ needs.prepare.outputs.version }}
+            GO_VERSION=1.26.0
+            GOLANGCI_LINT_VERSION=1.64.8
             GH_VERSION=${{ needs.prepare.outputs.gh_version }}
             YQ_VERSION=${{ needs.prepare.outputs.yq_version }}
             LG_VERSION=${{ needs.prepare.outputs.lg_version }}
