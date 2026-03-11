@@ -31,18 +31,15 @@
 ## ⚡ 一步启动
 
 ```bash
-# 克隆
+# 1. 克隆代码
 git clone https://github.com/hrygo/openclaw-devkit.git
 cd openclaw-devkit
 
-# 配置
+# 2. 准备配置并安装 (自动拉取/启动容器)
 cp .env.example .env
+make install
 
-# 拉镜像 + 启动
-docker pull ghcr.io/hrygo/openclaw-devkit:latest
-make up
-
-# 首次配置
+# 3. 首次配置向导
 make onboard
 ```
 
