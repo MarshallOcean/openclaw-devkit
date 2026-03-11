@@ -27,7 +27,7 @@ RUN set -eux && \
     esac && \
     TEMURIN_URL=$(curl -fsSL \
         "https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture=${TEMURIN_ARCH}&image_type=jdk&jvm_impl=hotspot&os=linux&vendor=eclipse" \
-        | grep -o '"link":"[^"]*"' | head -1 | cut -d'"' -f4) && \
+        | grep -o '"package":{"link":"[^"]*"' | head -1 | sed 's/.*"link":"\([^"]*\)".*/\1/') && \
     curl -fsSL "$TEMURIN_URL" | tar -xz -C /opt && \
     JDK_DIR=$(ls -d /opt/jdk-21*) && \
     ln -sf "$JDK_DIR" /usr/lib/jvm/java-21
