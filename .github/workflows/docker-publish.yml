@@ -181,10 +181,9 @@ jobs:
           file: .openclaw_src/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          no-cache: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             GH_VERSION=${{ needs.prepare.outputs.gh_version }}
             YQ_VERSION=${{ needs.prepare.outputs.yq_version }}

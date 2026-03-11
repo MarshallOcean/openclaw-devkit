@@ -47,10 +47,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 配置高速镜像和 Apt 重试
 # ============================================================
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
-    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
-    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
-    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
-    fi
+    rm -f /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list 2>/dev/null || true && \
+    printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://deb.debian.org/debian-security bookworm-security main contrib non-free\ndeb http://deb.debian.org/debian bookworm-updates main contrib non-free\n' > /etc/apt/sources.list
 
 LABEL org.opencontainers.image.base.name="docker.io/library/debian:stable-slim" \
     org.opencontainers.image.source="https://github.com/openclaw/openclaw" \
@@ -63,10 +61,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 配置高速镜像和 Apt 重试
 # ============================================================
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
-    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
-    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
-    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
-    fi
+    rm -f /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list 2>/dev/null || true && \
+    printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://deb.debian.org/debian-security bookworm-security main contrib non-free\ndeb http://deb.debian.org/debian bookworm-updates main contrib non-free\n' > /etc/apt/sources.list
 
 # 安装系统依赖和开发工具链
 # ============================================================
@@ -209,10 +205,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 配置 Apt 重试以提高网络容错性
 # 配置 Apt 重试以提高网络容错性
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
-    if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
-    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list.d/debian.sources || \
-    sed -i "s/deb.debian.org/$APT_MIRROR/g" /etc/apt/sources.list; \
-    fi
+    rm -f /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list 2>/dev/null || true && \
+    printf 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://deb.debian.org/debian-security bookworm-security main contrib non-free\ndeb http://deb.debian.org/debian bookworm-updates main contrib non-free\n' > /etc/apt/sources.list
 
 # 安装基础工具 (curl, ca-certificates for HTTPS)
 RUN apt-get update && \
