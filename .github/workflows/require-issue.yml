@@ -1,0 +1,69 @@
+name: Require Issue Reference
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  require-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR has issue reference
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            const title = pr.title || '';
+
+            // Check for common issue reference patterns
+            const issuePatterns = [
+              /closes?\s+#(\d+)/i,
+              /fixes?\s+#(\d+)/i,
+              /resolves?\s+#(\d+)/i,
+              /addresses?\s+#(\d+)/i,
+              /ref\s+#(\d+)/i,
+              /related\s+to\s+#(\d+)/i,
+              /\(see\s+#(\d+)\)/i,
+            ];
+
+            const hasIssueReference = issuePatterns.some(pattern =>
+              pattern.test(body) || pattern.test(title)
+            );
+
+            if (!hasIssueReference) {
+              // Comment on the PR with guidance
+              const comment = `## ⚠️ Missing Issue Reference
+
+This PR does not seem to be linked to an existing issue.
+
+**Please add one of the following issue references in your PR description or title:**
+- \`Closes #123\` - when the PR fully resolves the issue
+- \`Fixes #123\` - when the PR fixes the bug
+- \`Resolves #123\` - when the PR resolves the issue
+- \`Addresses #123\` - for related discussions
+
+Example:
+\`\`\`
+## Summary
+Add new feature for...
+
+## Related Issue
+Closes #123
+\`\`\`
+`;
+              github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+
+              core.setFailed('PR must reference an issue');
+            }
+
+            console.log('Issue reference found');
