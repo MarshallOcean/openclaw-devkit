@@ -100,6 +100,8 @@ services:
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace:rw
       # Unified state volume for persistent container data
       - openclaw-state:/home/node/.openclaw:rw
+      # Mount local entrypoint to apply fixes without rebuilding
+      - ./docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
 
       # === 可选挂载 (Optional) - 根据需求选择 ===
       # Claude Code session state (shared with host)
@@ -112,8 +114,6 @@ services:
       - openclaw-node-modules:/app/node_modules:rw
       - openclaw-go-mod:/home/node/go/pkg/mod:rw
       - openclaw-playwright-cache:/home/node/.cache/ms-playwright:rw
-      # Mount local entrypoint to apply fixes without rebuilding
-      - ./docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
       # -------------------------------------------------------------------------
       # 🔌 添加额外挂载点 (Extend with custom mounts)
       # -------------------------------------------------------------------------

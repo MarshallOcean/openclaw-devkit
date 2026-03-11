@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.4] - 2026-03-11
+
+### Added
+- **Slack Advanced Setup**: Supplemented the Slack Integration manual and `.env.example` templates with advanced configuration options, including Admin Binding, Mention Mode (`groupPolicy`), and Channel Allowed Lists.
+
 ## [v1.2.3] - 2026-03-11
 
 ### Fixed

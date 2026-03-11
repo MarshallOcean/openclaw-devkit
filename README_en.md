@@ -40,15 +40,16 @@
 | Component          | Requirement                    | Notes                                                                      |
 | :----------------- | :----------------------------- | :------------------------------------------------------------------------- |
 | **OS**             | Windows 10 21H2+ or Windows 11 |                                                                            |
-| **WSL2**           | Required                       | [Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install) |
+| **Backend**        | WSL2 (Recommended) or Hyper-V  | [Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install) |
 | **Memory**         | 8GB+ recommended               | Docker Desktop minimum 4GB                                                 |
 | **Virtualization** | Must enable in BIOS/UEFI       | Intel VT-x / AMD-V                                                         |
 
 > [!TIP]
-> Windows users should use **Docker Desktop** (includes WSL2 integration). After installation, enable WSL2:
+> Windows users are recommended to run **Docker Desktop** with the WSL2 backend for better performance. If using WSL2, enable it via PowerShell:
 > ```powershell
 > wsl --install
 > ```
+> *(Note: Windows 10/11 Pro editions and above can alternatively use the legacy Hyper-V backend without needing WSL2.)*
 
 ---
 

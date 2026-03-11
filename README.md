@@ -40,15 +40,16 @@
 | 组件 | 要求 | 说明 |
 | :--- | :--- | :--- |
 | **操作系统** | Windows 10 21H2+ 或 Windows 11 | |
-| **WSL2** | 必须安装 | [安装指南](https://docs.microsoft.com/zh-cn/windows/wsl/install) |
+| **后端引擎** | WSL2 (推荐) 或 Hyper-V | [安装指南](https://docs.microsoft.com/zh-cn/windows/wsl/install) |
 | **内存** | 推荐 8GB+ | Docker Desktop 最低 4GB |
 | **虚拟化** | 需在 BIOS/UEFI 中启用 | Intel VT-x / AMD-V |
 
 > [!TIP]
-> Windows 推荐使用 **Docker Desktop**（自带 WSL2 集成），安装后需开启 WSL2 功能：
+> Windows 推荐使用 **Docker Desktop** 基于 WSL2 后端运行（性能更佳）。若使用 WSL2，需在 PowerShell 中执行以下命令启用：
 > ```powershell
 > wsl --install
 > ```
+> *(注：Windows 10/11 专业版及更高版本用户也可选择使用传统的 Hyper-V 后端，此时无需安装 WSL2。)*
 
 ---
 
