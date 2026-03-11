@@ -1,127 +1,153 @@
-# OpenClaw DevKit 技术白皮书与参考手册
+# OpenClaw DevKit 技术白皮书与用户手册 (2026 工业级版)
 
-本手册是 OpenClaw DevKit 的权威技术文档。它既是面向**小白用户**的零门槛快速入门指南，也是面向**资深开发者与架构师**的底层逻辑白皮书。
+本手册是 OpenClaw DevKit 的权威技术规格书与操作指南。它不仅为**初学者**提供零门槛的快速入门路径，更记录了为**架构师与资深开发者**设计的底层逻辑、安全模型与高性能编排机制。
 
 ---
 
-## 📖 核心蓝图
+## 📖 核心蓝图 (Quick Navigation)
 
-### 🟢 基础篇
-- [1. 极速模式：3 分钟部署](#1-极速模式-全自动快车道) - 零基础首选。
-- [2. 交互式 onboard](#2-交互式-onboard-配置引导) - 手把手教你配置 LLM。
-- [3. 常用运维指令](#3-常用运维指令) - 掌握 `up`, `down`, `logs` 三板斧。
+### 🟢 基础篇：快速启动与上手
+- [1. 极速模式：3 分钟全自动部署](#1-极速模式-全自动快车道) - 零基础首选方案。
+- [2. 交互式 Onboarding](#2-交互式-onboarding-配置引导) - 获取 AI “灵魂”的必经环节。
+- [3. 常用运维指令全集](#3-常用运维指令) - 从启动到热重启的完整命令表。
 
-### 🔵 进阶篇
-- [4. 版本选择指南](#4-版本一键切换) - Standard vs. Java vs. Office。
-- [5. 数据持久化与挂载](#5-深度解析数据挂载与持久化) - 理解状态分离逻辑。
-- [6. Roles 与软链接管理](#6-roles-与开发流优化) - 隐私与便捷的平衡。
+### 🔵 进阶篇：生产力调优与环境切换
+- [4. 多维版本一键切换](#4-版本一键切换) - Standard vs. Java vs. Office 精确规格表。
+- [5. 数据持久化深探](#5-深度解析数据挂载与持久化) - 理解 Host Bind vs. Named Volumes。
+- [6. Roles 与开发流调优](#6-roles-与开发流优化) - 基于软链接的 Git 工作流最佳实践。
 
-### 🔴 架构篇
-- [7. 分层编排架构](#7-底层逻辑分层编排架构) - 揭秘 `docker-compose.build.yml` 逻辑。
-- [8. 环境初始化深度溯源](#8-环境初始化深度溯源) - 权限修复与种子填充机制。
-- [9. 安全沙盒与网络绑定](#9-安全白皮书沙盒与网络绑定) - 生产环境安全红线。
-- [附录：编排逻辑流转图 (ORCHESTRATION.md)](ORCHESTRATION.md) - 深度内窥安装全流程。
+### 🔴 架构篇：底层逻辑与安全基座
+- [7. 分层编排解析](#7-底层逻辑分层编排架构) - 揭秘 `docker-compose.build.yml` 的动态注入。
+- [8. 环境初始化生命周期](#8-环境初始化深度溯源) - 权限修复与种子填充的 5 步走。
+- [9. 安全沙盒与网络红线](#9-安全白皮书沙盒与网络绑定) - 掉权、隔离与局域网绑定机制。
+- [附录：编排流转可视化 (ORCHESTRATION.md)](ORCHESTRATION.md) - 深度内窥安装全流程。
 
 ---
 
 ## 🟢 基础篇：无障碍起步
 
 ### 1. 极速模式 (全自动快车道) ⭐
-极速模式利用 GitHub Packages 的预构建镜像，无需源码环境，无需本地编译。
+极速模式是 DevKit 的核心能力，通过 GitHub Packages (GHCR) 的预构建镜像，让您跳过繁琐的编译过程。
+
+**安装逻辑**：
+执行 `make install` 时，系统会自动执行以下原子操作：
+1. **环境自检**：确认 Docker 及 Compose 插件已安装。
+2. **种子补全**：如果宿主机缺少 [`.env`](.env)，则从 [`.env.example`](.env.example) 幂等初始化，并自动生成 32 位高强度 Gateway Token。
+3. **镜像感应**：识别您的硬件架构（x86/ARM），并从远程拉取对应的预构建层（约 2GB）。
 
 ```bash
-# 克隆并进入目录
+# 1. 克隆源码 (仅需编排层)
 git clone https://github.com/hrygo/openclaw-devkit.git && cd openclaw-devkit
 
-# 一键智能安装 (自动完成环境检查、.env 生成、镜像拉取)
+# 2. 一键智能适配
 make install
 ```
 
-### 2. 交互式 onboard 配置引导
-启动后，您需要为 OpenClaw 配置“灵魂”（LLM 密钥、飞书/Slack 令牌等）。
+### 2. 交互式 Onboarding 配置引导
+环境就绪后，OpenClaw 处于“待机”状态。您需要注入 LLM 供应商（如 Anthropic, OpenAI）和通讯平台（如飞书, Slack）的凭证。
+
 ```bash
 make onboard
 ```
-> **小白提示**：按照终端提示进行交互式输入即可，配置会自动保存在 `~/.openclaw` 中。
+**配置清单 (Pre-Onboarding Check)**：
+- **LLM API Key**：您的核心算力来源。
+- **App Token**：如果您要将 AI 接入企业聊天机器人。
+- **Workspace ID**：如果您需要 AI 感知特定的协作空间。
+> [!TIP]
+> 配置完成后，`openclaw.json` 会安全存储在 `~/.openclaw` 中，容器启动时会自动热加载。
 
 ### 3. 常用运维指令
-| 指令 | 场景 | 说明 |
+| 指令 | 目标 | 技术细节 |
 | :--- | :--- | :--- |
-| `make up` | 每天开始工作 | 启动服务进入后台 |
-| `make down` | 结束使用 | 停止所有服务 |
-| `make logs` | 出错时排查 | 查看网关实时运行日志 |
-| `make status` | 检查状态 | 查看容器是否在运行及访问地址 |
+| `make up` | 启动入口 | 后台运行 `openclaw-gateway` 与 `openclaw-cli` |
+| `make down` | 优雅停止 | 移除容器，但保留 Data Volumes 和网络定义 |
+| `make logs` | 实时监控 | 追踪网关的任务分发、WebSocket 状态及报错堆栈 |
+| `make status` | 探针检查 | 显示各容器的健康状态、运行时间及端口占用 |
+| `make restart` | 刷新环境 | 组合执行 `down` + `up`，用于强制刷新配置 |
 
 ---
 
 ## 🔵 进阶篇：生产力伸缩
 
-### 4. 版本一键切换
-DevKit 支持三种侧重点不同的镜像环境，通过 `make install [version]` 直接切换：
+### 4. 版本一键切换 (精准规格表)
+DevKit 严选三套垂直工具链，以应对不同的开发场景：
 
-| 版本 | 特色环境 | 适用场景 |
+| 规格名称 | 软件栈版本 (2026 Baseline) | 核心场景 |
 | :--- | :--- | :--- |
-| **Standard** | Node, Go, Python | 默认全栈开发环境 |
-| **Office** | OCR, Pandoc, LaTeX | 深度文档处理与办公自动化 |
-| **Java** | JDK 25, Gradle, Maven | 企业级 Java 开发与调试 |
+| **Standard** | Node 22, Go 1.2x, Python 3.12, Bun | 全栈开发、AI 插件编写、自动化脚本 |
+| **Office** | Standard + Pandoc, LaTeX, Playwright | 文档转换、网页爬虫、OCR 办公自动化 |
+| **Java** | Standard + JDK 25, Gradle 8.x, Maven | 企业级 Java 开发、大型项目构建与调试 |
+
+**切换方式**：
+```bash
+# 切换到 Office 环境
+make install office
+# 切换到 Java 环境
+make install java
+```
 
 ### 5. 深度解析：数据挂载与持久化
-DevKit 遵循 **“配置-状态-工作区”** 三路分离原则：
-1. **种子配置** (`~/.openclaw`): 存储 `openclaw.json`。
-2. **状态卷** (`openclaw-state`): 存储会话、凭证等高频读写数据（即便删除镜像，数据依然存在）。
-3. **工作区** (`~/.openclaw/workspace`): 您的代码操作台，与宿主机双向同步。
+为了保证 AI 容器的“非易失性”，我们设计了双轨持久化：
+
+1. **配置主干 (Bind Mount)**：
+   - 路径：`~/.openclaw/`
+   - 作用：存放 `openclaw.json`。这是 Agent 的身份证，允许您在宿主机直接编辑 JSON。
+2. **工作区 (Bidirectional Sync)**：
+   - 路径：`~/.openclaw/workspace/`
+   - 作用：您的开发案板。容器内外的所有文件变动均秒级同步。
+3. **隔离卷 (Named Volume)**：
+   - `.openclaw-state`：存放数据库快照、Session 持久化，防止镜像更新导致记忆丢失。
 
 ### 6. Roles 与开发流优化
-建议使用**软链接**模式管理 Agent 角色配置，兼顾 Git 提交的清晰度与本地隐私。
-```bash
-# 建立软链接示例
-ln -s /path/to/your/private/roles roles
-```
+在多人协作或 Git 管理时，为了避免泄露私有 Token，我们推荐 **“软链接隔离法”**：
+1. 将 `roles` 目录设为项目的软链接：`ln -s ./my-private-roles ./roles`。
+2. 在 [`.gitignore`](.gitignore) 中忽略该链接或实际路径，确保架构公开、凭证隐藏。
 
 ---
 
 ## 🔴 架构篇：底层逻辑深度内窥
 
-### 7. 底层逻辑：分层编排架构
-DevKit 采用业界领先的 **Layered Orchestration (分层编排)** 模型：
-- **`docker-compose.yml`**: 静态层。定义网络架构、外部端口和基础镜像。
-- **`docker-compose.build.yml`**: 构建层。仅在 `COMPOSE_FILE` 变量中包含时被激活，用于注入复杂的构建参数（Apt 镜像、代理、加速镜像等）。
-- **`Makefile` 驱动**: 自动感应 `.env` 中的 `OPENCLAW_SKIP_BUILD`。
+### 7. 底层逻辑：分层编排架构 (Layered Orchestration)
+DevKit 的 `Makefile` 是一套精密的驱动引擎，它会根据环境变量动态重组 Compose 文件：
+- **静态层** (`docker-compose.yml`)：定义拓扑。
+- **增强层** (`docker-compose.build.yml`)：当 `OPENCLAW_SKIP_BUILD=false` 时，该层注入 Dockerfile 路径及构建所需的代理参数（`HTTP_PROXY`）。
+- **动态覆盖**：`docker-setup.sh` 会在运行时动态生成 `docker-compose.dev.extra.yml`，处理用户自定义的额外挂载点（`OPENCLAW_EXTRA_MOUNTS`）。
 
-### 8. 环境初始化深度溯源
-在执行 `make install` 时，系统触发了以下关键逻辑链路：
-1. **Idempotent Setup**: 检查 `~/.openclaw` 树，补全所有必需目录。
-2. **Permission Guard**: 利用 Docker 分层权限修复技术，确保宿主机挂载目录对容器内的 `node` 用户 100% 可读写。
-3. **Identity Lock**: 在 `docker-entrypoint.sh` 中锁定 `gateway.bind = "lan"`，确保容器网络转发无阻。
+### 8. 环境初始化生命周期 (Lifecycle Trace)
+当您启动容器时，`docker-entrypoint.sh` 会接管初始 5 秒：
+1. **UID 自适应**：检测宿主机用户 ID，执行 `chown` 修复挂载目录的写入权限，杜绝 `EACCES` 报错。
+2. **种子注入**：若工作区为空，从内部 `/home/node/.openclaw-seed` 自动填充引导文件。
+3. **网络对齐**：强制锁定容器网关端口，并将绑定地址设为 `lan` 以穿透 Docker 桥接网卡。
 
-**可视化架构参考**：关于 `make install` 的每一步决策过程，请参阅 [ORCHESTRATION.md](ORCHESTRATION.md)。
+**可视化架构参考**：极致精密的每一步流转细节请参阅 [ORCHESTRATION.md](ORCHESTRATION.md)。
 
-### 9. 安全白皮书：沙盒与网络绑定
+### 9. 安全白皮书：沙盒机制与网络模型
 > [!IMPORTANT]
-> **容器必须绑定 `0.0.0.0 (lan)`。**
-> 因为 Docker 的端口转发是从桥接网关发出的请求。如果容器内绑定 `127.0.0.1`，由于回环地址隔离，它将无法接收来自宿主机的转发流量。DevKit 已经通过自动化脚本确保了这一点的安全性。
+> **最小特权原则 (Least Privilege)**：
+> - 容器禁用了 `NET_RAW` 和 `NET_ADMIN` 能力，防止 AI 代理探测宿主机局域网。
+> - 启用了 `no-new-privileges` 标志，切断了提权漏洞路径。
+> - **网络绑定**：所有 Web UI 仅监听 `127.0.0.1`，通过 Docker 端口映射暴露，最大程度降低公网暴露面。
 
 ---
 
 ## ❓ 故障排查 (QA / FAQ)
 
 <details>
-<summary><b>Q: 容器内网络连不通 (如：无法访问 Claude API)？</b></summary>
-A: 大概率是代理配置问题。首先确保宿主机代理开启了“允许局域网” (Allow LAN)。然后在 <code>.env</code> 中设置 <code>HTTP_PROXY=http://host.docker.internal:7897</code>。使用 <code>make test-proxy</code> 验证。
+<summary><b>Q: 容器内 curl 提示超时或 SSL 握手失败？</b></summary>
+1. 检查 <code>.env</code> 中的 <code>HTTPS_PROXY</code> 是否指向 <code>http://host.docker.internal:[您的代理端口]</code>。
+2. 确保您的代理软件（如 Clash/Stash）已开启 <b>"Allow LAN"</b> (允许局域网连接)。
 </details>
 
 <details>
-<summary><b>Q: 修改了代码但没生效？</b></summary>
-A: 如果您处于开发模式，请运行 <code>make rebuild</code>。它会执行二次构建并应用最新代码增量。
+<summary><b>Q: 为什么找不到我的 agent.json 配置文件？</b></summary>
+A: 请检查 <code>OPENCLAW_CONFIG_DIR</code> 的实际挂载路径。默认在 <code>~/.openclaw</code>。您可以在宿主机直接搜索该文件进行验证。
 </details>
 
 ---
 
-## ⚙️ 全量技术参数矩阵
+## ⚙️ 全量技术参数矩阵 (Advanced Tuning)
 
-本表汇总了 DevKit 中支持的所有环境变量，供资深用户进行深度调优。
-
-| 变量分类 | 变量名 | 默认值 | 详细说明与推荐配置 |
+| 变量分类 | 变量名 | 推荐值 | 工业级内涵 |
 | :--- | :--- | :--- | :--- |
 | **编排核心** | `COMPOSE_FILE` | `docker-compose.yml` | 定义编排分层。启用本地构建需加上 `:docker-compose.build.yml` |
 | | `OPENCLAW_SKIP_BUILD`| `true` | 开关：`true` (极速模式拉镜像), `false` (开发模式本地构建) |
@@ -130,7 +156,7 @@ A: 如果您处于开发模式，请运行 <code>make rebuild</code>。它会执
 | | `OPENCLAW_WORKSPACE_DIR`| `.../workspace` | 智能体操作的主战场，建议定期备份 |
 | **网络隔离** | `OPENCLAW_GATEWAY_PORT`| `18789` | 外部访问网关监听端口 |
 | | `OPENCLAW_GATEWAY_BIND`| `lan` | 必须保持 `lan` 以支持 Docker Bridge 转发 |
-| | `OPENCLAW_GATEWAY_TOKEN`| (随机) | Gateway 鉴权令牌，安装时自动注入 |
+| | `OPENCLAW_GATEWAY_TOKEN`| (生成的 Hex) | 连接 CLI 与网关的唯一数字握手凭证。 |
 | | `HTTP[S]_PROXY` | - | 容器外网出口。推荐使用 `http://host.docker.internal:端口` |
 | **加速镜像** | `DOCKER_MIRROR` | `docker.io` | Docker Hub 加速，构建时生效 |
 | | `APT_MIRROR` | `ustc` | Debian 包加速源，显著提升本地构建速度 |
@@ -138,9 +164,11 @@ A: 如果您处于开发模式，请运行 <code>make rebuild</code>。它会执
 | | `PYTHON_MIRROR` | - | 支持 pip 安装依赖时的加速，推荐清华源 |
 | **平台扩展** | `OPENCLAW_HOME_VOLUME`| - | (可选) 若设为命名卷名，则整个 `/home/node` 持久化 |
 | | `OPENCLAW_EXTRA_MOUNTS`| - | (高级) 格式: `src:dst[:ro]`。支持动态挂载额外资源 |
+| **性能调和** | `deploy.resources` | (Limits: 4G RAM) | 已在 YAML 中硬编码限制，防止 AI Agent 内存溢出导致系统崩溃。 |
 
 ---
 
 <p align="center">
-  <b>OpenClaw Team | 2026 技术规格书</b>
+  <b>OpenClaw Team | 2026 技术规格书</b><br>
+  <i>Empowering Human-AI Symbiosis Through Precise Engineering</i>
 </p>
