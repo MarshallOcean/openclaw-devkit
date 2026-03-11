@@ -20,6 +20,7 @@ This manual is the definitive technical documentation for the OpenClaw DevKit. I
 - [7. Layered Orchestration Architecture](#7-architecture-layered-orchestration) - The logic behind `docker-compose.build.yml`.
 - [8. Initialization Trace](#8-initialization-deep-trace) - Permission fixes and seed populating.
 - [9. Security Sandbox & Network Binding](#9-security-whitepaper-sandbox--network-binding) - Critical security guidelines for production.
+- [Appendix: Orchestration Logic Flow (ORCHESTRATION.md)](ORCHESTRATION.md) - Deep dive into the installation lifecycle.
 
 ---
 
@@ -92,6 +93,8 @@ When running `make install`, the system triggers the following critical logic ch
 1. **Idempotent Setup**: Verifies the `~/.openclaw` tree and creates all missing directories.
 2. **Permission Guard**: Uses Docker layered permission fixing to ensure host-mounted directories are 100% readable/writable by the container's `node` user.
 3. **Identity Lock**: Standardizes `gateway.bind = "lan"` in `docker-entrypoint.sh` to ensure zero-friction bridge networking.
+
+**Visual Architecture Reference**: For every decision-making step during `make install`, please refer to [ORCHESTRATION.md](ORCHESTRATION.md).
 
 ### 9. Security Whitepaper: Sandbox & Network Binding
 > [!IMPORTANT]

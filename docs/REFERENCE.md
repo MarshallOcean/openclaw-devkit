@@ -20,6 +20,7 @@
 - [7. 分层编排架构](#7-底层逻辑分层编排架构) - 揭秘 `docker-compose.build.yml` 逻辑。
 - [8. 环境初始化深度溯源](#8-环境初始化深度溯源) - 权限修复与种子填充机制。
 - [9. 安全沙盒与网络绑定](#9-安全白皮书沙盒与网络绑定) - 生产环境安全红线。
+- [附录：编排逻辑流转图 (ORCHESTRATION.md)](ORCHESTRATION.md) - 深度内窥安装全流程。
 
 ---
 
@@ -92,6 +93,8 @@ DevKit 采用业界领先的 **Layered Orchestration (分层编排)** 模型：
 1. **Idempotent Setup**: 检查 `~/.openclaw` 树，补全所有必需目录。
 2. **Permission Guard**: 利用 Docker 分层权限修复技术，确保宿主机挂载目录对容器内的 `node` 用户 100% 可读写。
 3. **Identity Lock**: 在 `docker-entrypoint.sh` 中锁定 `gateway.bind = "lan"`，确保容器网络转发无阻。
+
+**可视化架构参考**：关于 `make install` 的每一步决策过程，请参阅 [ORCHESTRATION.md](ORCHESTRATION.md)。
 
 ### 9. 安全白皮书：沙盒与网络绑定
 > [!IMPORTANT]

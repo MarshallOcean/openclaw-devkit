@@ -443,6 +443,11 @@ fi
 # ============================================================
 
 ENV_FILE="$ROOT_DIR/.env"
+if [[ ! -f "$ENV_FILE" ]]; then
+  info "初始化环境配置文件: ${CYAN}.env${NC} (从模板复制)"
+  cp "$ROOT_DIR/.env.example" "$ENV_FILE"
+fi
+
 info "同步环境变量文件: ${CYAN}$ENV_FILE${NC}"
 upsert_env "$ENV_FILE" \
   OPENCLAW_CONFIG_DIR \
