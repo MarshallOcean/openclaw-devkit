@@ -52,15 +52,15 @@ SETUP_SCRIPT := docker-setup.sh
 GATEWAY_PORT ?= $(if $(OPENCLAW_GATEWAY_PORT),$(OPENCLAW_GATEWAY_PORT),18789)
 OPENCLAW_BIN := openclaw
 
-# 镜像配置 (优先级: .env > 默认值)
-INITIAL_IMAGE_NAME := $(strip $(if $(OPENCLAW_IMAGE),$(OPENCLAW_IMAGE),openclaw-devkit))
+# 镜像配置 (强制使用基准名，防止 .env 中的标签导致冗余:go:go)
+INITIAL_IMAGE_NAME := ghcr.io/hrygo/openclaw-devkit
 IMAGE_NAME := $(INITIAL_IMAGE_NAME)
 
 # Docker 构建公共参数 (提供安全默认值以支持回退到原始源)
 DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) \
                      --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
                      --build-arg DOCKER_MIRROR=$(if $(DOCKER_MIRROR),$(DOCKER_MIRROR),docker.io) \
-                     --build-arg APT_MIRROR=$(if $(APT_MIRROR),$(APT_MIRROR),deb.debian.org) \
+                     --build-arg APT_MIRROR=$(if $(APT_MIRROR),$(APT_MIRROR),mirrors.tuna.tsinghua.edu.cn) \
                      --build-arg NPM_MIRROR=$(NPM_MIRROR) \
                      --build-arg PYTHON_MIRROR=$(PYTHON_MIRROR) \
                      --build-arg OPENCLAW_VERSION=$(if $(OPENCLAW_VERSION),$(OPENCLAW_VERSION),latest)
@@ -301,13 +301,7 @@ check-deps: ## 检查依赖
 # ============================================================
 
 define select_image
-$(if $(filter office %office,$(1)),\
-	$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME):office),\
-$(if $(filter java %java,$(1)),\
-	$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME):java),\
-$(if $(filter go %go,$(1)),\
-	$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME):go),\
-$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME):latest))))
+$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME):$(if $(filter office %office,$(1)),office,$(if $(filter java %java,$(1)),java,$(if $(filter go %go,$(1)),go,latest))))
 endef
 
 define do_build
@@ -317,12 +311,7 @@ $(call select_image,$(2))
 	docker pull $(IMAGE_NAME); \
 else \
 	echo "==> 正在构建镜像: $(IMAGE_NAME) (基于新分层架构)"; \
-	BASE_IMG=$$(case "$(1)" in \
-		go) echo "openclaw-runtime:go" ;; \
-		java) echo "openclaw-runtime:java" ;; \
-		office) echo "openclaw-runtime:office" ;; \
-		*) echo "openclaw-runtime:base" ;; \
-	esac); \
+	BASE_IMG=$(if $(filter go,$(1)),openclaw-runtime:go,$(if $(filter java,$(1)),openclaw-runtime:java,$(if $(filter office,$(1)),openclaw-runtime:office,openclaw-runtime:base))); \
 	docker build \
 		-t $(IMAGE_NAME) \
 		-f Dockerfile \

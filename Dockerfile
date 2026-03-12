@@ -13,7 +13,7 @@ ENV NODE_ENV=production
 ENV OPENCLAW_PREFER_PNPM=1
 
 # Install OpenClaw via official script
-RUN curl -fsSL https://openclaw.ai/install.sh | bash -s -- --version ${OPENCLAW_VERSION}
+RUN OPENCLAW_NO_ONBOARD=1 curl -fsSL https://openclaw.ai/install.sh | bash -s -- --version ${OPENCLAW_VERSION}
 
 # Install Tier 3 Fast-Updating AI Agents
 # Positioned here so updating these tools doesn't trigger a rebuild of the entire app layer

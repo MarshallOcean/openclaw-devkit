@@ -85,10 +85,10 @@ Choose the right version for your development needs:
 
 | Edition | Image Tag | Use Case | Core Tools |
 | :--- | :--- | :--- | :--- |
-| **Standard** | `dev` | General web development | Node.js 22, Python 3, pnpm, Bun, Playwright |
-| **Go** | `dev-go` | Go backend development | Standard + Go 1.26, golangci-lint, gopls, dlv |
-| **Java** | `dev-java` | Java backend development | Standard + JDK 21, Gradle, Maven |
-| **Office** | `dev-office` | Document processing/RAG | Standard + pandoc, LaTeX, OCR tools |
+| **Standard** | `latest` | General web development | Node.js 22, Bun, Claude Code, Playwright, Python 3 |
+| **Go** | `go` | Go backend development | Standard + Go 1.26, golangci-lint, gopls, dlv |
+| **Java** | `java` | Java backend development | Standard + JDK 21, Gradle, Maven |
+| **Office** | `office` | Document processing/RAG | Standard + LibreOffice, pandoc, LaTeX, Docling, Marker-PDF |
 
 **Install specific version:**
 
@@ -108,7 +108,7 @@ make install office
 
 **Switch version:** After initial install, modify `OPENCLAW_IMAGE` in `.env`, then run `make rebuild`
 
-Available image tags: `dev`, `dev-go`, `dev-java`, `dev-office`
+Available image tags: `latest`, `go`, `java`, `office`
 
 ---
 
@@ -165,6 +165,20 @@ make rebuild office
 
 In container at `~/.openclaw/`, persisted on host via `openclaw-state` volume.
 </details>
+
+---
+
+---
+
+## 📚 Technical Documentation
+
+| Document | Description | Key Points |
+| :--- | :--- | :--- |
+| [Image Variants](./docs/IMAGE_VARIANTS.md) | 1+3 architecture and version differences | `latest`, `go`, `java`, `office` tags |
+| [Docker Workflow](./docs/DOCKER_WORKFLOW.md) | Local development and CI/CD process | `make` commands, GitHub Actions logic |
+| [User Onboarding](./docs/USER_ONBOARDING.md) | Configuration and environment variables | `.env` setup, Claude API configuration |
+| [Feishu/Slack Setup](./docs/FEISHU_SETUP_BEGINNER_en.md) | Chat app and AI Agent integration | Bot creation, Webhook configuration |
+| [Reference Manual](./docs/REFERENCE_en.md) | Detailed Makefile command reference | Advanced ops, Troubleshooting |
 
 ---
 

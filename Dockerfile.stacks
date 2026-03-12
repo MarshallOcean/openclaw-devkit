@@ -49,10 +49,8 @@ RUN set -eux && \
     TEMURIN_URL=$(curl -fsSL \
         "https://api.adoptium.net/v3/assets/latest/${JDK_VERSION}/hotspot?architecture=${TEMURIN_ARCH}&image_type=jdk&jvm_impl=hotspot&os=linux&vendor=eclipse" \
         | jq -r '.[0].binary.package.link') && \
-    curl -fsSL "$TEMURIN_URL" | tar -xz -C /opt && \
-    JDK_DIR=$(find /opt -maxdepth 1 -type d -name "jdk-${JDK_VERSION}*") && \
-    mkdir -p /usr/lib/jvm && \
-    ln -sf "$JDK_DIR" /usr/lib/jvm/java-${JDK_VERSION}
+    mkdir -p /usr/lib/jvm/java-${JDK_VERSION} && \
+    curl -fsSL "$TEMURIN_URL" | tar -xz -C /usr/lib/jvm/java-${JDK_VERSION} --strip-components=1
 
 ENV JAVA_HOME=/usr/lib/jvm/java-${JDK_VERSION}
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
@@ -80,4 +78,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Use uv for ultra-fast python package installation
-RUN uv pip install --system --no-cache $PYTHON_PACKAGES
+RUN uv pip install --system --break-system-packages --no-cache $PYTHON_PACKAGES

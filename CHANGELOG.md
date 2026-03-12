@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.4.0] - 2026-03-12
+
+### Added
+- **1+3 Hierarchical Docker Architecture**: Fully implemented the layered build system (`base` -> `stacks` -> `products`) for optimized cache utilization and build speed.
+- **Unified Build Interface**: Refactored `Makefile` with semantic commands (`build-base`, `build-stacks`, `build-go`, etc.) and integrated version tracking.
+- **Docker Workflow Guide**: Added comprehensive `docs/DOCKER_WORKFLOW.md` with artifact matrices, build arguments documentation, and troubleshooting tips.
+
+### Improved
+- **Container Setup Routine**: Enhanced `docker-setup.sh` with better permission handling and support for the new hierarchical image structure.
+- **Documentation Parity**: Synchronized image variant details and artifact paths across all manuals.
+
 ## [v1.3.1] - 2026-03-11
 
 ### Added

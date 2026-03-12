@@ -85,10 +85,10 @@ make onboard
 
 | 版本 | 镜像标签 | 适用场景 | 核心工具 |
 | :--- | :--- | :--- | :--- |
-| **标准版** | `dev` | 通用 Web 开发 | Node.js 22, Python 3, pnpm, Bun, Playwright |
-| **Go 版** | `dev-go` | Go 后端开发 | 标准版 + Go 1.26, golangci-lint, gopls, dlv |
-| **Java 版** | `dev-java` | Java 后端开发 | 标准版 + JDK 21, Gradle, Maven |
-| **Office 版** | `dev-office` | 文档处理/RAG | 标准版 + pandoc, LaTeX, OCR 工具 |
+| **标准版** | `latest` | 通用 Web 开发 | Node.js 22, Bun, Claude Code, Playwright, Python 3 |
+| **Go 版** | `go` | Go 后端开发 | 标准版 + Go 1.26, golangci-lint, gopls, dlv |
+| **Java 版** | `java` | Java 后端开发 | 标准版 + JDK 21, Gradle, Maven |
+| **Office 版** | `office` | 文档处理/RAG | 标准版 + LibreOffice, pandoc, LaTeX, Docling, Marker-PDF |
 
 **安装指定版本：**
 
@@ -108,7 +108,7 @@ make install office
 
 **切换版本：** 首次安装后修改 `.env` 中的 `OPENCLAW_IMAGE`，然后执行 `make rebuild`
 
-可用的镜像标签：`dev`, `dev-go`, `dev-java`, `dev-office`
+可用的镜像标签：`latest`, `go`, `java`, `office`
 
 ---
 
@@ -165,6 +165,20 @@ make rebuild office
 
 容器内 `~/.openclaw/`，宿主机通过 `openclaw-state` 卷持久化。
 </details>
+
+---
+
+---
+
+## 📚 技术文档
+
+| 文档名称 | 描述 | 关键点 |
+| :--- | :--- | :--- |
+| [镜像变体指南](./docs/IMAGE_VARIANTS.md) | 详解 1+3 架构与各版本差异 | `latest`, `go`, `java`, `office` 区别 |
+| [Docker 工作流](./docs/DOCKER_WORKFLOW.md) | 本地开发与 CI/CD 流程 | `make` 命令、GitHub Actions 逻辑 |
+| [用户入职指南](./docs/USER_ONBOARDING.md) | 详细的配置与环境变量说明 | `.env` 配置、Claude API 设置 |
+| [飞书/钉钉配置](./docs/FEISHU_SETUP_BEGINNER.md) | 聊天应用与 AI Agent 联动 | 机器人创建、Webhook 配置 |
+| [详细参考手册](./docs/REFERENCE.md) | 完整的 Makefile 命令参考 | 进阶运维指令、故障排查 |
 
 ---
 
