@@ -22,7 +22,6 @@ This manual is the definitive technical specification and operational guide for 
 - [8. Layered Orchestration Analysis](#8-core-logic-layered-orchestration) - The mechanics of `docker-compose.build.yml` dynamic injection.
 - [9. Initialization Lifecycle](#9-initialization-lifecycle-deep-trace) - 5 phases of permission fixing and seed populating.
 - [10. Security Sandbox & Network Borders](#10-security-whitepaper-sandbox--network-binding) - Capabilities, isolation, and LAN binding.
-- [Appendix: Orchestration Logic Flow (ORCHESTRATION.md)](ORCHESTRATION.md) - Deep dive into the installation lifecycle.
 
 ---
 
@@ -169,7 +168,6 @@ When you start a container, `docker-entrypoint.sh` takes over for the first 5 se
 2. **Seed Injection**: If the workspace is empty, it automatically populates it from the internal `/home/node/.openclaw-seed`.
 3. **Network Alignment**: Locks the gateway port and sets the bind address to `lan` to bypass Docker bridge network isolation (`loopback` mode would prevent host access).
 
-**Visual Architecture Reference**: For precision details on every decision step, refer to [ORCHESTRATION.md](ORCHESTRATION.md).
 
 ### 10. Security Whitepaper: Sandbox & Network Binding
 > [!IMPORTANT]

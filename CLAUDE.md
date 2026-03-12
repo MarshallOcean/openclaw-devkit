@@ -13,9 +13,8 @@ openclaw-devkit/
 ├── Makefile                # Docker 运维命令入口
 ├── docker-compose.yml      # Docker Compose 配置 (支持 dev/go/java/office)
 ├── Dockerfile             # 开发环境镜像定义 (标准版)
-├── Dockerfile.java        # Java 版本镜像
-├── Dockerfile.go          # Go 版本镜像
-├── Dockerfile.office     # Office 版本镜像
+├── Dockerfile.base        # 基础镜像 (Debian + Node.js)
+├── Dockerfile.stacks      # 技术栈镜像 (Go/Java/Office 变体)
 └── docker-setup.sh       # 交互式初始化脚本
 ```
 
@@ -60,14 +59,14 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 
 ## Docker Image Variants
 
-| Variant | Dockerfile    | Use Case                    |
-|---------|---------------|------------------------------|
-| dev     | Dockerfile    | 标准开发版 (Node.js + Go)   |
-| go      | Dockerfile.go | Go 开发版 (包含 golangci-lint + Go 工具) |
-| java    | Dockerfile.java | Java 支持 (包含 JDK)       |
-| office  | Dockerfile.office | 办公环境集成 (PDF/OCR)    |
+| Variant | Image               | Use Case                    |
+|---------|---------------------|------------------------------|
+| latest  | openclaw-devkit:latest | 标准开发版 (Node.js + Python) |
+| go      | openclaw-devkit:go    | Go 开发版 (包含 Go 1.26 + 工具) |
+| java    | openclaw-devkit:java  | Java 支持 (包含 JDK 21)       |
+| office  | openclaw-devkit:office | 办公环境集成 (PDF/OCR)    |
 
-选择版本: `make install <variant>` 或 `make build <variant>`
+选择版本: `make install <variant>` 或 `make rebuild <variant>`
 
 ## Configuration
 
@@ -159,7 +158,7 @@ curl -fsSL -o /dev/null -w "%{http_code}" "https://nodejs.org/dist/v22.22.1/node
 
 ### Syntax Validation
 ```bash
-docker build --check -f Dockerfile.dev .  # Validate without full build
+docker build --check -f Dockerfile .  # Validate without full build
 ```
 
 ### Current Stable Versions

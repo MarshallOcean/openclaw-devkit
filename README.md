@@ -127,11 +127,11 @@ make install office
 | 指令 | 描述 |
 | :--- | :--- |
 | `make up` / `down` | 启动 / 停止服务 |
-| `make onboard` | 交互式配置向导 |
+| `make restart` | 重启服务 (down + up) |
+| `make onboard` | 交互式配置向导 (LLM、飞书、Slack 等) |
 | `make status` | 查看运行状态 |
 | `make logs` | 查看实时日志 |
 | `make shell` | 进入容器 Shell |
-| `make update` | 更新 OpenClaw 源码 |
 
 > 📖 更完整的命令说明 → [详细参考手册](./docs/REFERENCE.md)
 
@@ -177,7 +177,8 @@ make rebuild office
 | [镜像变体指南](./docs/IMAGE_VARIANTS.md) | 详解 1+3 架构与各版本差异 | `latest`, `go`, `java`, `office` 区别 |
 | [Docker 工作流](./docs/DOCKER_WORKFLOW.md) | 本地开发与 CI/CD 流程 | `make` 命令、GitHub Actions 逻辑 |
 | [快速入门指南](./docs/USER_ONBOARDING.md) | 详细的配置与环境变量说明 | `.env` 配置、Claude API 设置 |
-| [飞书/钉钉配置](./docs/FEISHU_SETUP_BEGINNER.md) | 聊天应用与 AI Agent 联动 | 机器人创建、Webhook 配置 |
+| [飞书配置](./docs/FEISHU_SETUP_BEGINNER.md) | 聊天应用与 AI Agent 联动 | 机器人创建、Webhook 配置 |
+| [Slack 配置](./docs/SLACK_SETUP_BEGINNER.md) | Slack 接入 OpenClaw | 机器人创建、Socket Mode 配置 |
 | [详细参考手册](./docs/REFERENCE.md) | 完整的 Makefile 命令参考 | 进阶运维指令、故障排查 |
 
 ---

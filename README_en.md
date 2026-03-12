@@ -127,11 +127,11 @@ Available image tags: `latest`, `go`, `java`, `office`
 | Command            | Description              |
 | :----------------- | :----------------------- |
 | `make up` / `down` | Start / Stop services    |
-| `make onboard`     | Interactive setup wizard |
+| `make restart`    | Restart services (down + up) |
+| `make onboard`     | Interactive setup wizard (LLM, Feishu, Slack) |
 | `make status`      | View runtime status      |
 | `make logs`        | View real-time logs      |
 | `make shell`       | Enter container shell    |
-| `make update`      | Update OpenClaw source   |
 
 > 📖 Complete command reference → [Detailed Reference Manual](./docs/REFERENCE.md)
 
