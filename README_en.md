@@ -131,7 +131,6 @@ Available image tags: `latest`, `go`, `java`, `office`
 | `make status`      | View runtime status      |
 | `make logs`        | View real-time logs      |
 | `make shell`       | Enter container shell    |
-| `make update`      | Update OpenClaw source   |
 
 > 📖 Complete command reference → [Detailed Reference Manual](./docs/REFERENCE.md)
 
