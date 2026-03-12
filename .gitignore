@@ -36,8 +36,7 @@ node_modules/
 # Docker volumes (local)
 .openclaw-backups/
 
-# OpenClaw source (git submodule)
-.openclaw_src/
+# OpenClaw config
 openclaw*.json*
 
 # loki

@@ -16,12 +16,7 @@ openclaw-devkit/
 ├── Dockerfile.java        # Java 版本镜像
 ├── Dockerfile.go          # Go 版本镜像
 ├── Dockerfile.office     # Office 版本镜像
-├── docker-setup.sh       # 交互式初始化脚本
-└── .openclaw_src/       # OpenClaw 源码目录 (git submodule)
-    ├── src/              # 核心源码
-    ├── extensions/       # 扩展插件 (Discord, Slack, Zalo, Feishu 等)
-    ├── apps/             # 移动端应用 (iOS, Android, macOS)
-    └── docs/             # 文档
+└── docker-setup.sh       # 交互式初始化脚本
 ```
 
 ## Common Commands (Makefile)
@@ -90,28 +85,12 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 
 首次使用建议运行 `make install` 或直接运行 `./docker-setup.sh`
 
-## Source Code Notes
-
-- 源码位于 `.openclaw_src/` 目录，是 OpenClaw 官方仓库的 git submodule (如需)
-- 容器内源码路径: `/app/openclaw/` (mount 到此处)
-
 ## Development Workflow
 
 1. 首次设置: `make install`
 2. 启动服务: `make up`
 3. 访问 Web UI: http://127.0.0.1:18789
-4. 修改源码后: `make rebuild`
-5. 查看日志: `make logs`
-
-## OpenClaw Source Code Conventions
-
-详见 `.openclaw_src/CLAUDE.md` (软链接到 `.openclaw_src/AGents.md`)。关键要点:
-
-- 包管理器: pnpm (Node 22+, pnpm 10.23.0)
-- 构建/测试: `pnpm build`, `pnpm test`, `pnpm check`
-- TypeScript strict mode, 禁止 `any`, `@ts-nocheck`
-- 代码格式化: Oxlint + Oxfmt (`pnpm check`)
-- 测试框架: Vitest (`pnpm test`)
+4. 查看日志: `make logs`
 
 ## Environment Variables
 
