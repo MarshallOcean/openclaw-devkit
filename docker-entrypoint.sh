@@ -21,7 +21,7 @@ run_as_node() {
 # This solves the EACCES issue with host-mounted volumes
 if [ "$(id -u)" = "0" ]; then
     echo "--> Fixing permissions for $CONFIG_DIR..."
-    chown -R node:node "$CONFIG_DIR" 2>/dev/null || echo "Warning: Could not fix permissions (continuing anyway)"
+    chown -R node:node "$CONFIG_DIR" 2>/dev/null || true
 fi
 
 # 1.5 Surgical Config Repair (Resilience)

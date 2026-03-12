@@ -81,10 +81,31 @@ services:
   # ============================================================================
   # OpenClaw Gateway
   # ============================================================================
+  openclaw-init:
+    <<: *openclaw-common
+    container_name: openclaw-init
+    # Don't restart - this is a one-shot job
+    restart: "no"
+    # Run before gateway to fix config issues (unhealthy from old schema)
+    command: ["sh", "-c", "echo '==> Pre-checking configuration...' && openclaw doctor --fix && echo '==> Configuration ready'"]
+    volumes:
+      # Mount config as rw so we can fix it
+      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw:rw
+      - openclaw-state:/home/node/.openclaw-state:rw
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -f /home/node/.openclaw/openclaw.json"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   openclaw-gateway:
     <<: *openclaw-common
     user: "0:0" # Run as root to fix permissions - enabled to fix EACCES
     container_name: openclaw-gateway
+    depends_on:
+      openclaw-init:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"

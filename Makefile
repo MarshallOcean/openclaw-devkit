@@ -212,7 +212,6 @@ clean-volumes: ## 清理所有数据卷
 	@docker compose down -v
 	@docker volume rm openclaw-node-modules openclaw-go-mod \
 		openclaw-playwright-cache openclaw-playwright-bin \
-		openclaw-sessions-main openclaw-sessions-codex \
 		openclaw-state 2>/dev/null || true
 	@echo "✓ 数据卷已清理"
 
