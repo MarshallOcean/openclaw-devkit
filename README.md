@@ -176,7 +176,7 @@ make rebuild office
 | :--- | :--- | :--- |
 | [镜像变体指南](./docs/IMAGE_VARIANTS.md) | 详解 1+3 架构与各版本差异 | `latest`, `go`, `java`, `office` 区别 |
 | [Docker 工作流](./docs/DOCKER_WORKFLOW.md) | 本地开发与 CI/CD 流程 | `make` 命令、GitHub Actions 逻辑 |
-| [用户入职指南](./docs/USER_ONBOARDING.md) | 详细的配置与环境变量说明 | `.env` 配置、Claude API 设置 |
+| [快速入门指南](./docs/USER_ONBOARDING.md) | 详细的配置与环境变量说明 | `.env` 配置、Claude API 设置 |
 | [飞书/钉钉配置](./docs/FEISHU_SETUP_BEGINNER.md) | 聊天应用与 AI Agent 联动 | 机器人创建、Webhook 配置 |
 | [详细参考手册](./docs/REFERENCE.md) | 完整的 Makefile 命令参考 | 进阶运维指令、故障排查 |
 

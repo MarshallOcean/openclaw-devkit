@@ -288,10 +288,6 @@ endif
 # 维护
 # ============================================================
 
-update: ## 更新源码
-	@chmod +x update-source.sh
-	@./update-source.sh
-
 check-deps: ## 检查依赖
 	@echo "Docker: "; command -v docker >/dev/null 2>&1 && docker --version | cut -d' ' -f3 | xargs echo || echo "✗"
 	@echo "Compose: "; command -v docker >/dev/null 2>&1 && docker compose version --short 2>/dev/null || echo "✗"

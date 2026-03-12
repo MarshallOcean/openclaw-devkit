@@ -17,7 +17,6 @@ openclaw-devkit/
 ├── Dockerfile.go          # Go 版本镜像
 ├── Dockerfile.office     # Office 版本镜像
 ├── docker-setup.sh       # 交互式初始化脚本
-├── update-source.sh      # 从 GitHub Release 更新源码
 └── .openclaw_src/       # OpenClaw 源码目录 (git submodule)
     ├── src/              # 核心源码
     ├── extensions/       # 扩展插件 (Discord, Slack, Zalo, Feishu 等)
@@ -38,7 +37,6 @@ make status           # 查看服务状态
 # 构建与更新
 make build            # 构建镜像 (无缓存)
 make rebuild          # 重建镜像并重启服务
-make update           # 从 GitHub Release 更新源码
 
 # 调试诊断
 make logs             # 查看 Gateway 日志
@@ -94,10 +92,8 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 
 ## Source Code Notes
 
-- 源码位于 `.openclaw_src/` 目录，是 OpenClaw 官方仓库的 git submodule
-- 更新源码: `./update-source.sh` 或 `make update`
+- 源码位于 `.openclaw_src/` 目录，是 OpenClaw 官方仓库的 git submodule (如需)
 - 容器内源码路径: `/app/openclaw/` (mount 到此处)
-- **修改源码后需运行 `make rebuild` 使更改生效**
 
 ## Development Workflow
 
@@ -124,7 +120,7 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 HTTP_PROXY=http://host.docker.internal:7897
 HTTPS_PROXY=http://host.docker.internal:7897
 
-# GitHub Token (用于 update-source.sh)
+# GitHub Token (用于 gh CLI)
 GITHUB_TOKEN=xxx
 ```
 
@@ -158,7 +154,6 @@ docker compose logs openclaw-gateway
 # 转换换行符 (推荐)
 sed -i 's/\r$//' docker-entrypoint.sh
 sed -i 's/\r$//' docker-setup.sh
-sed -i 's/\r$//' update-source.sh
 
 # 重启服务
 make down
