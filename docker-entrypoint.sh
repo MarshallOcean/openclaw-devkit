@@ -17,10 +17,10 @@ run_as_node() {
     fi
 }
 
-# 1. Fix Permissions (if running as root)
-# This solves the EACCES issue with host-mounted volumes
+# 1. Optimize File Access (if running as root)
+# Windows users: Permission warnings can be safely ignored on host mounts.
 if [ "$(id -u)" = "0" ]; then
-    echo "--> Fixing permissions for $CONFIG_DIR..."
+    echo "--> Optimizing file access policy for $CONFIG_DIR..."
     chown -R node:node "$CONFIG_DIR" 2>/dev/null || true
 fi
 

@@ -386,7 +386,7 @@ repair_host_permissions() {
         dir_owner=$(stat -c '%u' "$dir" 2>/dev/null || stat -f '%u' "$dir" 2>/dev/null || echo "0")
 
         if [[ "$dir_owner" != "$(id -u)" ]]; then
-            echo "  --> 发现目录 $dir 属于其他用户 (UID: $dir_owner)，尝试修复..."
+            echo "  --> 正在优化宿主机目录 $dir 的访问策略 (当前所有者 UID: $dir_owner)..."
 
             # 方案1: 尝试用 docker run 修复（需要 docker 权限）
             if docker info >/dev/null 2>&1; then
