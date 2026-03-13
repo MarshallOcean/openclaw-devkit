@@ -509,19 +509,27 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 info "同步环境变量文件: ${CYAN}$ENV_FILE${NC}"
-upsert_env "$ENV_FILE" \
-  OPENCLAW_CONFIG_DIR \
-  OPENCLAW_WORKSPACE_DIR \
-  OPENCLAW_GATEWAY_PORT \
-  OPENCLAW_BRIDGE_PORT \
-  OPENCLAW_GATEWAY_TOKEN \
-  OPENCLAW_IMAGE \
-  OPENCLAW_EXTRA_MOUNTS \
-  OPENCLAW_HOME_VOLUME \
-  OPENCLAW_SKIP_BUILD \
-  COMPOSE_FILE \
-  GIT_USER_NAME \
-  GIT_USER_EMAIL
+# Inside the container, we want these to always point to /home/node/.openclaw
+# but we keep the host paths in the script variables for logging and mounting.
+(
+  export OPENCLAW_CONFIG_DIR="/home/node/.openclaw"
+  export OPENCLAW_WORKSPACE_DIR="/home/node/.openclaw/workspace"
+  upsert_env "$ENV_FILE" \
+    OPENCLAW_CONFIG_DIR \
+    OPENCLAW_WORKSPACE_DIR \
+    OPENCLAW_GATEWAY_PORT \
+    OPENCLAW_BRIDGE_PORT \
+    OPENCLAW_GATEWAY_TOKEN \
+    OPENCLAW_IMAGE \
+    OPENCLAW_EXTRA_MOUNTS \
+    OPENCLAW_HOME_VOLUME \
+    HTTP_PROXY \
+    HTTPS_PROXY \
+    OPENCLAW_SKIP_BUILD \
+    COMPOSE_FILE \
+    GIT_USER_NAME \
+    GIT_USER_EMAIL
+)
 success "环境变量同步完成"
 
 # ============================================================
