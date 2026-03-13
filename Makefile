@@ -110,7 +110,7 @@ DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) \
 
 help: ## 显示帮助信息
 	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)==>   OpenClaw DevKit  v2.0   |  终端运维蓝图 $(NC)"
+	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)==>   OpenClaw DevKit   |  终端运维蓝图 $(NC)"
 	@$(UTF8_FIX) echo "  $(BOLD)══════════════════════════════════════════════════════════$(NC)"
 	@$(UTF8_FIX) echo ""
 	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)⚡  快速开始 (Zero-Friction) $(NC)"
