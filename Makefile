@@ -37,6 +37,9 @@ else
     HOME_DIR := $(HOME)
 endif
 
+# Export HOME for docker compose visibility on Windows
+export HOME := $(HOME_DIR)
+
 # Common Commands (Platform Neutral)
 MKDIR := mkdir -p
 RM    := rm -rf
