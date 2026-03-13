@@ -11,7 +11,7 @@ SEED_DIR="/home/node/.openclaw-seed"
 # Helper to run commands as the node user if currently root
 run_as_node() {
     if [ "$(id -u)" = "0" ]; then
-        runuser -u node -m -- "$@"
+        runuser -u node -m -- env HOME=/home/node "$@"
     else
         "$@"
     fi

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.6.1] - 2026-03-13
+
+### Fixed
+- **Container Runtime**: Resolved `Permission denied` error when setting Git identity in entrypoint. Modified `run_as_node` helper to explicitly set `HOME=/home/node`, preventing attempts to write to `/root/.gitconfig`.
+
 ## [v1.6.0] - 2026-03-13
 
 ### Fixed
