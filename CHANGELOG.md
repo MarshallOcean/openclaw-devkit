@@ -2,6 +2,77 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.5] - 2026-03-13
+
+### Fixed
+- **Gateway Network Configuration**: Updated `docker-entrypoint.sh` to use `lan` bind mode by default instead of `all`, respecting existing configurations while ensuring host accessibility.
+
+## [v1.5.4] - 2026-03-13
+
+### Fixed
+- **Makefile (Environment Priority)**: Fixed `make install` to correctly respect the `OPENCLAW_IMAGE` environment variable defined in `.env` or the shell, while maintaining the ability to explicitly switch variants (e.g., `make install go`).
+
+## [v1.5.3] - 2026-03-13
+
+### Fixed
+- **Docker Build (Go Stack)**: Replaced `rm -rf` with `go clean -modcache` to resolve permission denied errors during image construction as non-root user.
+
+## [v1.5.2] - 2026-03-13
+
+### Fixed
+- **Tool Permissions (Non-root Access)**: 
+    - Moved the `node` user creation to the base image to ensure availability across all build stages.
+    - Relocated **Bun** installation to `/usr/local` (global) to ensure it is executable by the `node` user.
+    - Updated **Go toolchain** installation to run under the `node` user with a correctly owned `GOPATH` (`/home/node/go`).
+    - Standardized global `PATH` and installation directories for AI Agents (Claude Code, OpenCode, Pi-Mono) to guarantee non-root accessibility.
+
+## [v1.5.1] - 2026-03-13
+
+### Added
+- **Image Update Strategy**: Clearly defined the difference between `make install` (fast/local-first) and `make rebuild` (force sync/update) in documentation and FAQ.
+- **Image Update FAQ**: Added troubleshooting entries for forcing image updates to the latest remote version.
+
+### Fixed
+- **Windows Bulletproof Compatibility**: 
+    - Forced UTF-8 encoding across `Makefile` and interactive `onboard` sessions to prevent mojibake/encoding issues.
+    - Automated LF line-ending normalization for shell scripts via `.gitattributes` and self-healing scripts.
+    - Improved shell environment detection (recommending Git Bash) and enhanced tilde expansion robustness.
+    - Resolved `EACCES /Users` permission errors on Windows by switching from host-paths to container-relative paths in `.env` where necessary.
+- **Container Resilience**:
+    - Forced `0.0.0.0` binding for the gateway to ensure accessible networking across all environments.
+    - Fixed `HOME` directory handling for the `node` user in specialized image variants.
+    - Improved `onboard` target to be more resilient to non-fatal errors by restoring missing command prefixes.
+- **Documentation Integrity**:
+    - Audited and removed several "hallucinated" or obsolete commands (e.g., `make update`) from documentation.
+    - Synchronized documentation parity between Chinese and English versions.
+
+## [v1.5.0] - 2026-03-12
+
+### Added
+- **Pre-Start Config Migration**: Added `openclaw-init` container that runs `openclaw doctor --fix` before gateway starts, preventing "unhealthy container" errors when upgrading from old OpenClaw versions with incompatible config schema.
+- **Auto-Cleanup Init Container**: The init container now automatically removes itself after successful config repair, keeping the environment clean.
+
+### Improved
+- **Config Migration UX**: Eliminated confusing "Warning: Could not fix permissions" message from entrypoint logs.
+- **Startup Reliability**: Gateway now waits for config repair to complete before starting healthcheck, ensuring smooth upgrades.
+- **clean-volumes**: Fixed to remove only existing volume references.
+
+## [v1.4.0] - 2026-03-12
+
+### Added
+- **1+3 Hierarchical Docker Architecture**: Fully implemented the layered build system (`base` -> `stacks` -> `products`) for optimized cache utilization and build speed.
+- **Unified Build Interface**: Refactored `Makefile` with semantic commands (`build-base`, `build-stacks`, `build-go`, etc.) and integrated version tracking.
+- **Docker Workflow Guide**: Added comprehensive `docs/DOCKER_WORKFLOW.md` with artifact matrices, build arguments documentation, and troubleshooting tips.
+
+### Improved
+- **Container Setup Routine**: Enhanced `docker-setup.sh` with better permission handling and support for the new hierarchical image structure.
+- **Documentation Parity**: Synchronized image variant details and artifact paths across all manuals.
+
+## [v1.4.1] - 2026-03-12
+
+### Changed
+- **OpenClaw Installation**: Use npm to install OpenClaw CLI instead of install.sh script for better reliability.
+
 ## [v1.3.1] - 2026-03-11
 
 ### Added

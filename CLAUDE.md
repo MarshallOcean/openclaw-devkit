@@ -13,16 +13,9 @@ openclaw-devkit/
 ├── Makefile                # Docker 运维命令入口
 ├── docker-compose.yml      # Docker Compose 配置 (支持 dev/go/java/office)
 ├── Dockerfile             # 开发环境镜像定义 (标准版)
-├── Dockerfile.java        # Java 版本镜像
-├── Dockerfile.go          # Go 版本镜像
-├── Dockerfile.office     # Office 版本镜像
-├── docker-setup.sh       # 交互式初始化脚本
-├── update-source.sh      # 从 GitHub Release 更新源码
-└── .openclaw_src/       # OpenClaw 源码目录 (git submodule)
-    ├── src/              # 核心源码
-    ├── extensions/       # 扩展插件 (Discord, Slack, Zalo, Feishu 等)
-    ├── apps/             # 移动端应用 (iOS, Android, macOS)
-    └── docs/             # 文档
+├── Dockerfile.base        # 基础镜像 (Debian + Node.js)
+├── Dockerfile.stacks      # 技术栈镜像 (Go/Java/Office 变体)
+└── docker-setup.sh       # 交互式初始化脚本
 ```
 
 ## Common Commands (Makefile)
@@ -38,7 +31,6 @@ make status           # 查看服务状态
 # 构建与更新
 make build            # 构建镜像 (无缓存)
 make rebuild          # 重建镜像并重启服务
-make update           # 从 GitHub Release 更新源码
 
 # 调试诊断
 make logs             # 查看 Gateway 日志
@@ -67,14 +59,14 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 
 ## Docker Image Variants
 
-| Variant | Dockerfile    | Use Case                    |
-|---------|---------------|------------------------------|
-| dev     | Dockerfile    | 标准开发版 (Node.js + Go)   |
-| go      | Dockerfile.go | Go 开发版 (包含 golangci-lint + Go 工具) |
-| java    | Dockerfile.java | Java 支持 (包含 JDK)       |
-| office  | Dockerfile.office | 办公环境集成 (PDF/OCR)    |
+| Variant | Image               | Use Case                    |
+|---------|---------------------|------------------------------|
+| latest  | openclaw-devkit:latest | 标准开发版 (Node.js + Python) |
+| go      | openclaw-devkit:go    | Go 开发版 (包含 Go 1.26 + 工具) |
+| java    | openclaw-devkit:java  | Java 支持 (包含 JDK 21)       |
+| office  | openclaw-devkit:office | 办公环境集成 (PDF/OCR)    |
 
-选择版本: `make install <variant>` 或 `make build <variant>`
+选择版本: `make install <variant>` 或 `make rebuild <variant>`
 
 ## Configuration
 
@@ -92,30 +84,12 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 
 首次使用建议运行 `make install` 或直接运行 `./docker-setup.sh`
 
-## Source Code Notes
-
-- 源码位于 `.openclaw_src/` 目录，是 OpenClaw 官方仓库的 git submodule
-- 更新源码: `./update-source.sh` 或 `make update`
-- 容器内源码路径: `/app/openclaw/` (mount 到此处)
-- **修改源码后需运行 `make rebuild` 使更改生效**
-
 ## Development Workflow
 
 1. 首次设置: `make install`
 2. 启动服务: `make up`
 3. 访问 Web UI: http://127.0.0.1:18789
-4. 修改源码后: `make rebuild`
-5. 查看日志: `make logs`
-
-## OpenClaw Source Code Conventions
-
-详见 `.openclaw_src/CLAUDE.md` (软链接到 `.openclaw_src/AGents.md`)。关键要点:
-
-- 包管理器: pnpm (Node 22+, pnpm 10.23.0)
-- 构建/测试: `pnpm build`, `pnpm test`, `pnpm check`
-- TypeScript strict mode, 禁止 `any`, `@ts-nocheck`
-- 代码格式化: Oxlint + Oxfmt (`pnpm check`)
-- 测试框架: Vitest (`pnpm test`)
+4. 查看日志: `make logs`
 
 ## Environment Variables
 
@@ -124,7 +98,7 @@ make clean-volumes    # 清理所有数据卷 (危险!)
 HTTP_PROXY=http://host.docker.internal:7897
 HTTPS_PROXY=http://host.docker.internal:7897
 
-# GitHub Token (用于 update-source.sh)
+# GitHub Token (用于 gh CLI)
 GITHUB_TOKEN=xxx
 ```
 
@@ -158,7 +132,6 @@ docker compose logs openclaw-gateway
 # 转换换行符 (推荐)
 sed -i 's/\r$//' docker-entrypoint.sh
 sed -i 's/\r$//' docker-setup.sh
-sed -i 's/\r$//' update-source.sh
 
 # 重启服务
 make down
@@ -185,7 +158,7 @@ curl -fsSL -o /dev/null -w "%{http_code}" "https://nodejs.org/dist/v22.22.1/node
 
 ### Syntax Validation
 ```bash
-docker build --check -f Dockerfile.dev .  # Validate without full build
+docker build --check -f Dockerfile .  # Validate without full build
 ```
 
 ### Current Stable Versions

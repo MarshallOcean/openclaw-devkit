@@ -75,7 +75,8 @@ make onboard
 ```
 
 > [!NOTE]
-> `make install` automates: directory creation, `.env` config generation, pulling the latest images, and fixing host permissions.
+> `make install` automates: directory creation, `.env` config generation, image synchronization, and fixing host permissions.
+> **Note**: To ensure installation speed, `make install` prioritizes existing local images. **If this is not your first installation, it is recommended to run `make rebuild` to pull the latest image version.**
 
 ---
 
@@ -85,10 +86,10 @@ Choose the right version for your development needs:
 
 | Edition | Image Tag | Use Case | Core Tools |
 | :--- | :--- | :--- | :--- |
-| **Standard** | `dev` | General web development | Node.js 22, Python 3, pnpm, Bun, Playwright |
-| **Go** | `dev-go` | Go backend development | Standard + Go 1.26, golangci-lint, gopls, dlv |
-| **Java** | `dev-java` | Java backend development | Standard + JDK 21, Gradle, Maven |
-| **Office** | `dev-office` | Document processing/RAG | Standard + pandoc, LaTeX, OCR tools |
+| **Standard** | `latest` | General web development | Node.js 22, Bun, Claude Code, Playwright, Python 3 |
+| **Go** | `go` | Go backend development | Standard + Go 1.26, golangci-lint, gopls, dlv |
+| **Java** | `java` | Java backend development | Standard + JDK 21, Gradle, Maven |
+| **Office** | `office` | Document processing/RAG | Standard + LibreOffice, pandoc, LaTeX, Docling, Marker-PDF |
 
 **Install specific version:**
 
@@ -108,7 +109,7 @@ make install office
 
 **Switch version:** After initial install, modify `OPENCLAW_IMAGE` in `.env`, then run `make rebuild`
 
-Available image tags: `dev`, `dev-go`, `dev-java`, `dev-office`
+Available image tags: `latest`, `go`, `java`, `office`
 
 ---
 
@@ -127,11 +128,11 @@ Available image tags: `dev`, `dev-go`, `dev-java`, `dev-office`
 | Command            | Description              |
 | :----------------- | :----------------------- |
 | `make up` / `down` | Start / Stop services    |
-| `make onboard`     | Interactive setup wizard |
+| `make restart`    | Restart services (down + up) |
+| `make onboard`     | Interactive setup wizard (LLM, Feishu, Slack) |
 | `make status`      | View runtime status      |
 | `make logs`        | View real-time logs      |
 | `make shell`       | Enter container shell    |
-| `make update`      | Update OpenClaw source   |
 
 > 📖 Complete command reference → [Detailed Reference Manual](./docs/REFERENCE.md)
 
@@ -146,25 +147,38 @@ Ensure your proxy has "Allow LAN Connections" enabled. Run `make test-proxy` to 
 </details>
 
 <details>
-<summary><b>Q: How to switch versions?</b></summary>
+<summary><b>Q: How to force update images to the latest version?</b></summary>
 
+`make install` uses local cache by default. To detect and update remote images, run:
 ```bash
-# Go edition
-make rebuild go
-
-# Java edition
-make rebuild java
-
-# Office edition
-make rebuild office
+make rebuild
 ```
+Or manually execute `docker pull ghcr.io/hrygo/openclaw-devkit:latest`.
 </details>
+
+<details>
+<summary><b>Q: How to switch versions?</b></summary>
+...
 
 <details>
 <summary><b>Q: Where are config files?</b></summary>
 
 In container at `~/.openclaw/`, persisted on host via `openclaw-state` volume.
 </details>
+
+---
+
+---
+
+## 📚 Technical Documentation
+
+| Document | Description | Key Points |
+| :--- | :--- | :--- |
+| [Image Variants](./docs/IMAGE_VARIANTS.md) | 1+3 architecture and version differences | `latest`, `go`, `java`, `office` tags |
+| [Docker Workflow](./docs/DOCKER_WORKFLOW.md) | Local development and CI/CD process | `make` commands, GitHub Actions logic |
+| [Quick Start Guide](./docs/USER_ONBOARDING.md) | Configuration and environment variables | `.env` setup, Claude API configuration |
+| [Feishu/Slack Setup](./docs/FEISHU_SETUP_BEGINNER_en.md) | Chat app and AI Agent integration | Bot creation, Webhook configuration |
+| [Reference Manual](./docs/REFERENCE_en.md) | Detailed Makefile command reference | Advanced ops, Troubleshooting |
 
 ---
 

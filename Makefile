@@ -23,7 +23,43 @@
 # Visual Styling (Whitepaper Grade)
 # ============================================================
 
-# ANSI Colors (Calculated for portability)
+# Detect OS
+ifeq ($(OS),Windows_NT)
+    PLATFORM := Windows
+else
+    PLATFORM := Unix
+endif
+
+# Determine Home Directory
+ifeq ($(PLATFORM),Windows)
+    HOME_DIR := $(USERPROFILE)
+else
+    HOME_DIR := $(HOME)
+endif
+
+# Export HOME for docker compose visibility on Windows
+export HOME := $(HOME_DIR)
+
+# Check shell environment on Windows
+ifeq ($(OS),Windows_NT)
+    # Detect if we are in a POSIX-compatible shell (Git Bash, MSYS2, Cygwin, etc.)
+    ifeq ($(strip $(MSYSTEM)),)
+        ifeq ($(strip $(BASH_VERSION)),)
+            $(error $(shell echo 1>&2 " \
+                \n  [ ERROR ]  Unsupported Shell Environment (CMD/PowerShell detected)\n \
+                \n  OpenClaw DevKit requires a POSIX environment to run correctly.\n \
+                \n  FIX: Please use 'Git Bash' (included with Git for Windows).\n \
+                \n  1. Download: https://git-scm.com/download/win\n \
+                \n  2. Launch 'Git Bash' in this directory and run 'make' again.\n\n"))
+        endif
+    endif
+endif
+
+# Common Commands (POSIX-Standard)
+MKDIR := mkdir -p
+RM    := rm -rf
+
+# ANSI Colors (Now reliable via Git Bash/Unix)
 RED    := $(shell printf '\033[0;31m')
 GREEN  := $(shell printf '\033[0;32m')
 YELLOW := $(shell printf '\033[1;33m')
@@ -52,58 +88,59 @@ SETUP_SCRIPT := docker-setup.sh
 GATEWAY_PORT ?= $(if $(OPENCLAW_GATEWAY_PORT),$(OPENCLAW_GATEWAY_PORT),18789)
 OPENCLAW_BIN := openclaw
 
-# 镜像配置 (优先级: .env > 默认值)
-INITIAL_IMAGE_NAME := $(strip $(if $(OPENCLAW_IMAGE),$(OPENCLAW_IMAGE),openclaw-devkit:dev))
-IMAGE_NAME := $(INITIAL_IMAGE_NAME)
+# 镜像配置
+INITIAL_IMAGE_NAME := ghcr.io/hrygo/openclaw-devkit
+IMAGE_NAME := $(if $(OPENCLAW_IMAGE),$(OPENCLAW_IMAGE),$(INITIAL_IMAGE_NAME):latest)
 
 # Docker 构建公共参数 (提供安全默认值以支持回退到原始源)
 DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) \
                      --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
                      --build-arg DOCKER_MIRROR=$(if $(DOCKER_MIRROR),$(DOCKER_MIRROR),docker.io) \
-                     --build-arg APT_MIRROR=$(if $(APT_MIRROR),$(APT_MIRROR),deb.debian.org) \
+                     --build-arg APT_MIRROR=$(if $(APT_MIRROR),$(APT_MIRROR),mirrors.tuna.tsinghua.edu.cn) \
                      --build-arg NPM_MIRROR=$(NPM_MIRROR) \
-                     --build-arg PYTHON_MIRROR=$(PYTHON_MIRROR)
+                     --build-arg PYTHON_MIRROR=$(PYTHON_MIRROR) \
+                     --build-arg OPENCLAW_VERSION=$(if $(OPENCLAW_VERSION),$(OPENCLAW_VERSION),latest)
 
 # ============================================================
 # 帮助信息 (现代分组版)
 # ============================================================
 
-help: ## 显示完整命令列表
-	@echo ""
-	@echo "  $(INFO)  $(CYAN)$(BOLD)OpenClaw DevKit  v2.0$(NC)  |  $(BOLD)终端运维蓝图$(NC)"
-	@echo "  ══════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "  $(BOLD)⚡  快速开始 (Zero-Friction)$(NC)"
-	@printf "    $(CYAN)%-22s$(NC) %s\n" "make install" "一键适配、生成及安装"
-	@printf "    $(CYAN)%-22s$(NC) %s\n" "make onboard" "交互式灵魂配置 (LLM/API)"
-	@printf "    $(CYAN)%-22s$(NC) %s\n" "make up" "启动服务"
-	@printf "    $(CYAN)%-22s$(NC) %s\n" "make down" "停止服务"
-	@echo ""
-	@echo "  $(BOLD)🔄  生命周期管理$(NC)"
-	@printf "    %-22s %s\n" "make restart" "服务重启"
-	@printf "    %-22s %s\n" "make status" "查看分层编排状态"
-	@echo ""
-	@echo "  $(BOLD)🔧  构建引擎 (Version: dev|go|java|office)$(NC)"
-	@printf "    %-22s %s\n" "make build" "感知式构建 (根据 SKIP_BUILD)"
-	@printf "    %-22s %s\n" "make rebuild" "强制更新镜像并重启"
-	@echo ""
-	@echo "  $(BOLD)🐛  调试与诊断$(NC)"
-	@printf "    %-22s %s\n" "make logs" "查看 Gateway 实时日志"
-	@printf "    %-22s %s\n" "make shell" "进入隔离沙盒 Shell"
-	@printf "    %-22s %s\n" "make test-proxy" "黑盒代理通配性测试"
-	@printf "    %-22s %s\n" "make verify" "工具链合规检查"
-	@echo ""
-	@echo "  $(BOLD)💾  持久化维护$(NC)"
-	@printf "    %-22s %s\n" "make backup-config" "配置全量备份"
-	@printf "    %-22s %s\n" "make update" "从 GH 同步最新逻辑基因"
-	@echo ""
-	@echo "  ══════════════════════════════════════════════════════════"
-	@echo "  $(BOLD)分级调用:$(NC) make <cmd> <version>"
-	@echo "  $(INFO)  $(YELLOW)dev$(NC) (标准) | $(YELLOW)go$(NC) (Go) | $(YELLOW)java$(NC) (Java) | $(YELLOW)office$(NC) (办公)"
-	@echo ""
-	@echo "  $(BOLD)示例:$(NC) ${CYAN}make install go${NC}"
-	@echo "  ══════════════════════════════════════════════════════════"
-	@echo ""
+help: ## 显示帮助信息
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)==>   OpenClaw DevKit   |  终端运维蓝图 $(NC)\n"
+	@printf "  $(BOLD)══════════════════════════════════════════════════════════$(NC)\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)⚡  快速开始 (Zero-Friction) $(NC)\n"
+	@printf "    $(BOLD)make install$(NC)            一键适配、生成及安装\n"
+	@printf "    $(BOLD)make onboard$(NC)            交互式灵魂配置 (LLM/API)\n"
+	@printf "    $(BOLD)make up$(NC)                 启动服务\n"
+	@printf "    $(BOLD)make down$(NC)               停止服务\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)🔄  生命周期管理 $(NC)\n"
+	@printf "    $(BOLD)make restart$(NC)           服务重启\n"
+	@printf "    $(BOLD)make status$(NC)            查看分层编排状态\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)🔧  构建引擎 (Version: dev|go|java|office) $(NC)\n"
+	@printf "    $(BOLD)make build$(NC)             感知式构建 (根据 SKIP_BUILD)\n"
+	@printf "    $(BOLD)make rebuild$(NC)           强制更新镜像并重启\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)🐛  调试与诊断 $(NC)\n"
+	@printf "    $(BOLD)make logs$(NC)              查看 Gateway 实时日志\n"
+	@printf "    $(BOLD)make shell$(NC)             进入隔离沙盒 Shell\n"
+	@printf "    $(BOLD)make test-proxy$(NC)        黑盒代理通配性测试\n"
+	@printf "    $(BOLD)make verify$(NC)            工具链合规检查\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)💾  持久化维护 $(NC)\n"
+	@printf "    $(BOLD)make backup-config$(NC)     配置全量备份\n"
+	@printf "    $(BOLD)make update$(NC)            从 GH 同步最新逻辑基因\n"
+	@printf "\n"
+	@printf "  $(BOLD)══════════════════════════════════════════════════════════$(NC)\n"
+	@printf "  分级调用:  make <cmd> <version>\n"
+	@printf "  ==>   dev  (标准) | go  (Go) | java  (Java) | office  (办公)\n"
+	@printf "\n"
+	@printf "  示例:  make install go \n"
+	@printf "  $(BOLD)══════════════════════════════════════════════════════════$(NC)\n"
+	@printf "\n"
 
 # ============================================================
 # 版本选择 (伪目标)
@@ -126,10 +163,10 @@ dev: ## 内部: 选择标准版
 # ============================================================
 
 install: ## 首次安装/初始化环境
-	@chmod +x $(SETUP_SCRIPT)
+	@$(if $(filter Unix,$(PLATFORM)),chmod +x "$(SETUP_SCRIPT)",)
 	@$(call select_image,$(MAKECMDGOALS))
 	@echo "$(INFO) 目标环境: $(BOLD)$(YELLOW)$(IMAGE_NAME)$(NC)"
-	@OPENCLAW_IMAGE=$(IMAGE_NAME) ./$(SETUP_SCRIPT)
+	@OPENCLAW_IMAGE="$(IMAGE_NAME)" bash "$(SETUP_SCRIPT)"
 	@echo "$(SUCCESS) $(GREEN)环境安装完毕!$(NC)"
 	@echo "  $(INFO) 提示: 首次安装后，请执行 $(BOLD)make onboard$(NC) 以交互式引导配置 LLM 与 聊天应用。"
 
@@ -138,9 +175,9 @@ up: ## 启动服务
 	@echo "✓ 已启动 (Web: http://127.0.0.1:$(GATEWAY_PORT)/)"
 	@echo "提示: 初次使用建议运行 'make onboard' 进行交互式配置。"
 
-onboard: ## 交互式引导设置 (LLM, 飞书, 频道等)
-	@echo "==> 启动交互式引导程序..."
-	@docker compose run --rm openclaw-cli openclaw onboard
+onboard: ## 启动交互式引导程序
+	@echo "$(INFO) 启动交互式引导程序..."
+	@docker compose run --rm -it -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 openclaw-cli openclaw onboard
 
 down: ## 停止服务
 	@docker compose down
@@ -154,7 +191,7 @@ status: ## 查看服务状态
 	@docker ps --filter "name=openclaw" --format "  {{.Names}}: {{.Status}}" 2>/dev/null || echo "  (无运行中的容器)"
 	@echo ""
 	@echo "【镜像】"
-	@docker images $(IMAGE_NAME) --format "  {{.Repository}}:{{.Tag}} ({{.Size}})" 2>/dev/null || echo "  (未构建)"
+	@docker images "$(IMAGE_NAME)" --format "  {{.Repository}}:{{.Tag}} ({{.Size}})" 2>/dev/null || echo "  (未构建)"
 	@echo ""
 	@echo "【访问】 http://127.0.0.1:$(GATEWAY_PORT)/"
 
@@ -162,16 +199,30 @@ status: ## 查看服务状态
 # 构建与清理
 # ============================================================
 
-build: ## 构建标准版镜像 (1+2 基座)
+# ============================================================
+# 构建与清理 (Hierarchical Layering)
+# ============================================================
+
+build-base: ## 构建统一基础镜像 (debian:bookworm-slim)
+	@echo "$(INFO) 正在构建基础设施镜像: $(BOLD)openclaw-runtime:base$(NC)"
+	@docker build -t openclaw-runtime:base -f Dockerfile.base $(DOCKER_BUILD_ARGS) .
+
+build-stacks: build-base ## 构建全套技术栈基座 (Go, Java, Office)
+	@echo "$(INFO) 正在构建技术栈基座..."
+	@docker build -t openclaw-runtime:go --target stack-go -f Dockerfile.stacks $(DOCKER_BUILD_ARGS) --build-arg BASE_IMAGE=openclaw-runtime:base .
+	@docker build -t openclaw-runtime:java --target stack-java -f Dockerfile.stacks $(DOCKER_BUILD_ARGS) --build-arg BASE_IMAGE=openclaw-runtime:base .
+	@docker build -t openclaw-runtime:office --target stack-office -f Dockerfile.stacks $(DOCKER_BUILD_ARGS) --build-arg BASE_IMAGE=openclaw-runtime:base .
+
+build: ## 构建标准版镜像 (基于 openclaw-runtime:base)
 	@$(call do_build,dev,$(MAKECMDGOALS))
 
-build-go: build ## 构建 Go 版镜像 (基于 Standard)
+build-go: ## 构建 Go 版镜像 (基于 openclaw-runtime:go)
 	@$(call do_build,go,$(MAKECMDGOALS))
 
-build-java: build ## 构建 Java 版镜像 (基于 Standard)
+build-java: ## 构建 Java 版镜像 (基于 openclaw-runtime:java)
 	@$(call do_build,java,$(MAKECMDGOALS))
 
-build-office: build ## 构建 Office 版镜像 (基于 Standard)
+build-office: ## 构建 Office 版镜像 (基于 openclaw-runtime:office)
 	@$(call do_build,office,$(MAKECMDGOALS))
 
 rebuild: ## 重建镜像并重启
@@ -193,12 +244,10 @@ clean: ## 清理容器和悬空镜像
 
 clean-volumes: ## 清理所有数据卷
 	@echo "$(WARN)  确认清理所有数据卷? 按 Enter 确认, Ctrl+C 取消"
-	@read confirm
-	@docker compose down -v
-	@docker volume rm openclaw-node-modules openclaw-go-mod \
+	@sh -c 'read confirm && docker compose down -v && \
+		docker volume rm openclaw-node-modules openclaw-go-mod \
 		openclaw-playwright-cache openclaw-playwright-bin \
-		openclaw-sessions-main openclaw-sessions-codex \
-		openclaw-state 2>/dev/null || true
+		openclaw-state 2>/dev/null || true'
 	@echo "✓ 数据卷已清理"
 
 # ============================================================
@@ -206,10 +255,10 @@ clean-volumes: ## 清理所有数据卷
 # ============================================================
 
 logs: ## 查看 Gateway 日志
-	@docker compose logs -f openclaw-gateway
+	@LANG=C.UTF-8 LC_ALL=C.UTF-8 docker compose logs --tail 100 -f openclaw-gateway
 
 logs-all: ## 查看所有容器日志
-	@docker compose logs -f
+	@LANG=C.UTF-8 LC_ALL=C.UTF-8 docker compose logs --tail 100 -f
 
 shell: ## 进入 Gateway 容器
 	@docker compose exec openclaw-gateway bash
@@ -241,58 +290,49 @@ test-proxy: ## 测试代理连接
 # 备份与恢复
 # ============================================================
 
-BACKUP_DIR := ~/.openclaw-backups
+BACKUP_DIR := $(HOME_DIR)/.openclaw-backups
 
 backup-config: ## 备份配置
-	@mkdir -p $(BACKUP_DIR)
-	@TIM=$$(date +%Y%m%d-%H%M%S)
-	@tar -czf $(BACKUP_DIR)/main-agent-$$TIM.tar.gz -C $(HOME)/.openclaw/agents/main/agent . 2>/dev/null && echo "✓ main" || echo "⚠ main (无)"
-	@tar -czf $(BACKUP_DIR)/codex-agent-$$TIM.tar.gz -C $(HOME)/.openclaw/agents/codex/agent . 2>/dev/null && echo "✓ codex" || echo "⚠ codex (无)"
-	@cp $(HOME)/.openclaw/openclaw.json $(BACKUP_DIR)/openclaw-$$TIM.json 2>/dev/null && echo "✓ config" || echo "⚠ config (无)"
+	@$(MKDIR) $(BACKUP_DIR)
+	@sh -c 'TIM=$$(date +%Y%m%d-%H%M%S) && \
+		tar -czf $(BACKUP_DIR)/main-agent-$$TIM.tar.gz -C $(HOME_DIR)/.openclaw/agents/main/agent . 2>/dev/null && echo "✓ main" || echo "⚠ main (无)"; \
+		tar -czf $(BACKUP_DIR)/codex-agent-$$TIM.tar.gz -C $(HOME_DIR)/.openclaw/agents/codex/agent . 2>/dev/null && echo "✓ codex" || echo "⚠ codex (无)"; \
+		cp $(HOME_DIR)/.openclaw/openclaw.json $(BACKUP_DIR)/openclaw-$$TIM.json 2>/dev/null && echo "✓ config" || echo "⚠ config (无)"'
 	@echo "备份完成: $(BACKUP_DIR)"
 
 restore-config: ## 恢复配置
 ifndef FILE
 	@echo "用法: make restore-config FILE=<filename>"
-	@ls -lt $(BACKUP_DIR) 2>/dev/null | head -5 || echo "  (无备份)"
+	@sh -c 'ls -lt $(BACKUP_DIR) 2>/dev/null | head -5 || echo "  (无备份)"'
 	@exit 1
 endif
 	@echo "⚠ 确认恢复 $(FILE)? 按 Enter 确认"
-	@read confirm
-	@if [[ "$(FILE)" == *agent*.tar.gz ]]; then \
-		AGENT=$$(echo "$(FILE)" | sed 's/-agent-.*//'); \
-		mkdir -p $(HOME)/.openclaw/agents/$$AGENT/agent; \
-		tar -xzf $(BACKUP_DIR)/$(FILE) -C $(HOME)/.openclaw/agents/$$AGENT/agent; \
-		echo "✓ 已恢复 $$AGENT"; \
-	elif [[ "$(FILE)" == *.json ]]; then \
-		cp $(BACKUP_DIR)/$(FILE) $(HOME)/.openclaw/openclaw.json; \
-		echo "✓ 已恢复 config"; \
-	fi
+	@sh -c 'read confirm && \
+		if [[ "$(FILE)" == *agent*.tar.gz ]]; then \
+			AGENT=$$(echo "$(FILE)" | sed "s/-agent-.*//"); \
+			mkdir -p $(HOME_DIR)/.openclaw/agents/$$AGENT/agent; \
+			tar -xzf $(BACKUP_DIR)/$(FILE) -C $(HOME_DIR)/.openclaw/agents/$$AGENT/agent; \
+			echo "✓ 已恢复 $$AGENT"; \
+		elif [[ "$(FILE)" == *.json ]]; then \
+			cp $(BACKUP_DIR)/$(FILE) $(HOME_DIR)/.openclaw/openclaw.json; \
+			echo "✓ 已恢复 config"; \
+		fi'
 
 # ============================================================
 # 维护
 # ============================================================
 
-update: ## 更新源码
-	@chmod +x update-source.sh
-	@./update-source.sh
-
 check-deps: ## 检查依赖
-	@echo "Docker: "; command -v docker >/dev/null 2>&1 && docker --version | cut -d' ' -f3 | xargs echo || echo "✗"
-	@echo "Compose: "; command -v docker >/dev/null 2>&1 && docker compose version --short 2>/dev/null || echo "✗"
+	@echo "Docker: "; sh -c 'command -v docker >/dev/null 2>&1 && docker --version | cut -d" " -f3 | xargs echo || echo "✗"'
+	@echo "Compose: "; sh -c 'command -v docker >/dev/null 2>&1 && docker compose version --short 2>/dev/null || echo "✗"'
 
 # ============================================================
 # 内部函数
 # ============================================================
 
 define select_image
-$(if $(filter office %office,$(1)),\
-	$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME)-office),\
-$(if $(filter java %java,$(1)),\
-	$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME)-java),\
-$(if $(filter go %go,$(1)),\
-	$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME)-go),\
-$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME)))))
+$(eval _VARIANT := $(if $(filter office %office,$(1)),office,$(if $(filter java %java,$(1)),java,$(if $(filter go %go,$(1)),go,$(if $(filter dev %dev,$(1)),latest,)))))
+$(if $(_VARIANT),$(eval IMAGE_NAME := $(INITIAL_IMAGE_NAME):$(_VARIANT)),)
 endef
 
 define do_build
@@ -301,15 +341,14 @@ $(call select_image,$(2))
 	echo "==> 跳过构建，正在拉取镜像: $(IMAGE_NAME)"; \
 	docker pull $(IMAGE_NAME); \
 else \
-	echo "==> 正在构建镜像: $(IMAGE_NAME)"; \
-	BASE_IMG=$(INITIAL_IMAGE_NAME); \
-	cp -f Dockerfile* docker-entrypoint.sh .openclaw_src/ 2>/dev/null || true; \
+	echo "==> 正在构建镜像: $(IMAGE_NAME) (基于新分层架构)"; \
+	BASE_IMG=$(if $(filter go,$(1)),openclaw-runtime:go,$(if $(filter java,$(1)),openclaw-runtime:java,$(if $(filter office,$(1)),openclaw-runtime:office,openclaw-runtime:base))); \
 	docker build \
 		-t $(IMAGE_NAME) \
-		-f .openclaw_src/$(if $(filter java,$(1)),Dockerfile.java,$(if $(filter go,$(1)),Dockerfile.go,$(if $(filter office,$(1)),Dockerfile.office,Dockerfile))) \
+		-f Dockerfile \
 		$(DOCKER_BUILD_ARGS) \
 		--build-arg BASE_IMAGE=$$BASE_IMG \
-		.openclaw_src; \
+		.; \
 fi
 endef
 

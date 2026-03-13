@@ -17,11 +17,11 @@ run_as_node() {
     fi
 }
 
-# 1. Fix Permissions (if running as root)
-# This solves the EACCES issue with host-mounted volumes
+# 1. Optimize File Access (if running as root)
+# Windows users: Permission warnings can be safely ignored on host mounts.
 if [ "$(id -u)" = "0" ]; then
-    echo "--> Fixing permissions for $CONFIG_DIR..."
-    chown -R node:node "$CONFIG_DIR" 2>/dev/null || echo "Warning: Could not fix permissions (continuing anyway)"
+    echo "--> Optimizing file access policy for $CONFIG_DIR..."
+    chown -R node:node "$CONFIG_DIR" 2>/dev/null || true
 fi
 
 # 1.5 Surgical Config Repair (Resilience)
@@ -70,7 +70,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
     # If still missing, run official setup
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "--> Running official OpenClaw onboarding (non-interactive)..."
-        run_as_node openclaw onboard --non-interactive --accept-risk
+        # Allow failure here; often the config is created but a secondary gateway check fails.
+        run_as_node openclaw onboard --non-interactive --accept-risk || true
     fi
 fi
 
@@ -107,6 +108,8 @@ run_as_node openclaw config set gateway.controlUi.allowedOrigins '["http://127.0
 # This ensures all files created by the app (logs, sessions) belong to 'node'
 echo "==> Starting OpenClaw..."
 if [ "$(id -u)" = "0" ]; then
+    # Ensure HOME is correctly set for node before execution
+    export HOME=/home/node
     exec runuser -u node -m -- "$@"
 else
     exec "$@"

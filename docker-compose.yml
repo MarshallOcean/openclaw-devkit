@@ -18,7 +18,7 @@
 # YAML Anchors for DRY Configuration
 # ------------------------------------------------------------------------------
 x-openclaw-common: &openclaw-common
-  image: ${OPENCLAW_IMAGE:-openclaw-devkit:dev}
+  image: ${OPENCLAW_IMAGE:-openclaw}
   environment: &common-env
     HOST_UID: ${HOST_UID:-1000}
     # ─────────────────────────────────────────────────────────────────
@@ -43,6 +43,8 @@ x-openclaw-common: &openclaw-common
     # ─────────────────────────────────────────────────────────────────
     PLAYWRIGHT_BROWSERS_PATH: /home/node/.cache/ms-playwright
     HOME: /home/node
+    # Fallback for host HOME to satisfy docker-compose volume interpolation on Windows
+    HOST_HOME: ${HOME:-${USERPROFILE:-/tmp}}
     TERM: xterm-256color
   extra_hosts:
     - "host.docker.internal:host-gateway"
@@ -81,15 +83,40 @@ services:
   # ============================================================================
   # OpenClaw Gateway
   # ============================================================================
+  openclaw-init:
+    <<: *openclaw-common
+    user: "0:0"
+    container_name: openclaw-init
+    # Don't restart - this is a one-shot job
+    restart: "no"
+    # Run before gateway to fix config issues (unhealthy from old schema)
+    command: ["sh", "-c", "echo '==> Pre-checking configuration...' && openclaw doctor --fix && echo '==> Configuration ready'"]
+    volumes:
+      # Mount config as rw so we can fix it
+      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw:rw
+      - openclaw-state:/home/node/.openclaw-state:rw
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -f /home/node/.openclaw/openclaw.json"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   openclaw-gateway:
     <<: *openclaw-common
     user: "0:0" # Run as root to fix permissions - enabled to fix EACCES
     container_name: openclaw-gateway
+    depends_on:
+      openclaw-init:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"
     env_file:
       - .env
+    environment:
+      - OPENCLAW_CONFIG_DIR=/home/node/.openclaw
+      - OPENCLAW_WORKSPACE_DIR=/home/node/.openclaw/workspace
     init: true
     volumes:
       # === 必需挂载 (Required) ===
@@ -105,7 +132,7 @@ services:
 
       # === 可选挂载 (Optional) - 根据需求选择 ===
       # Claude Code session state (shared with host)
-      - ${HOME}/.claude:/home/node/.claude:rw
+      - ${HOME:-${USERPROFILE:-/tmp}}/.claude:/home/node/.claude:rw
       # Named volumes for caches (optional, speeds up restarts)
       - openclaw-node-modules:/app/node_modules:rw
       - openclaw-go-mod:/home/node/go/pkg/mod:rw
@@ -127,11 +154,12 @@ services:
       # 移除复杂的 inline command，改用容器内置 entrypoint
       # command: ["openclaw", "gateway", "--allow-unconfigured"]
     healthcheck: &common-healthcheck
-      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
-      interval: 30s
+      # Use 127.0.0.1 for more stable local check
+      test: [ "CMD", "node", "-e", "require('http').get('http://127.0.0.1:18789/healthz', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))" ]
+      interval: 15s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 30s
     labels:
       - "openclaw.service=gateway"
       - "openclaw.environment=dev"

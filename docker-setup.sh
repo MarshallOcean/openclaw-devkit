@@ -1,23 +1,36 @@
-#!/usr/bin/env bash
-# OpenClaw 开发环境 Docker 部署脚本
-#
-# 用法:
-#   ./docker-setup.sh [选项]
-#
-# 选项:
-#   --no-browser    跳过浏览器安装（减少约 300MB）
-#   --help          显示帮助信息
-#
-# 环境变量:
-#   OPENCLAW_CONFIG_DIR     配置目录 (默认: ~/.openclaw)
-#   OPENCLAW_WORKSPACE_DIR  工作区目录 (默认: ~/.openclaw/workspace)
-#   OPENCLAW_EXTRA_MOUNTS   额外挂载点 (格式: src:dst[:ro],src2:dst2)
-#   OPENCLAW_HOME_VOLUME    命名卷名称 (可选，用于持久化整个 home)
+# Hard Check: Ensure we are running in Bash
+if [ -z "$BASH_VERSION" ]; then
+  echo "Error: This script requires a Bash-compatible shell."
+  case "$OSTYPE" in
+    msys*|cygwin*|win32*) 
+      echo "Recommendation: Please use 'Git Bash' (included with Git for Windows) or another POSIX environment."
+      ;;
+  esac
+  exit 1
+fi
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IMAGE_NAME="${OPENCLAW_IMAGE:-openclaw-devkit:dev}"
+IMAGE_NAME="${OPENCLAW_IMAGE:-ghcr.io/hrygo/openclaw-devkit:latest}"
+
+# OS Detection
+IS_WINDOWS=false
+[[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] && IS_WINDOWS=true
+
+# Self-Healing: Fix CRLF line endings in docker-entrypoint.sh if on Windows
+if [ -f "$ROOT_DIR/docker-entrypoint.sh" ]; then
+    if grep -q $'\r' "$ROOT_DIR/docker-entrypoint.sh" 2>/dev/null; then
+        echo "Detected CRLF line endings in docker-entrypoint.sh, converting to LF..."
+        if command -v sed >/dev/null 2>&1; then
+            sed -i 's/\r//g' "$ROOT_DIR/docker-entrypoint.sh"
+        else
+            tr -d '\r' < "$ROOT_DIR/docker-entrypoint.sh" > "$ROOT_DIR/docker-entrypoint.sh.tmp" && \
+            mv "$ROOT_DIR/docker-entrypoint.sh.tmp" "$ROOT_DIR/docker-entrypoint.sh"
+        fi
+    fi
+fi
+
 # COMPOSE_FILE is managed by .env for flexibility
 # EXTRA_COMPOSE_FILE still used for on-the-fly mounts
 EXTRA_COMPOSE_FILE="$ROOT_DIR/docker-compose.dev.extra.yml"
@@ -51,11 +64,11 @@ warn() {
 }
 
 success() {
-  echo -e "${SUCCESS}${GREEN}$*${NC}"
+  echo "${SUCCESS}${GREEN}$*${NC}"
 }
 
 info() {
-  echo -e "${INFO} $*"
+  echo "${INFO} $*"
 }
 
 require_cmd() {
@@ -163,32 +176,47 @@ NODE
 upsert_env() {
   local file="$1"
   shift
-  local -a keys=("$@")
+  # We use a temporary file to avoid partial writes
   local tmp
-  tmp="$(mktemp)"
+  if command -v mktemp >/dev/null 2>&1; then
+    tmp="$(mktemp)"
+  else
+    tmp="${file}.tmp.$$"
+  fi
+  
   local seen=" "
 
-  if [[ -f "$file" ]]; then
-    while IFS= read -r line || [[ -n "$line" ]]; do
+  if [ -f "$file" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
       local key="${line%%=*}"
-      local replaced=false
-      for k in "${keys[@]}"; do
-        if [[ "$key" == "$k" ]]; then
-          printf '%s=%s\n' "$k" "${!k-}" >>"$tmp"
+      local found=false
+      for k in "$@"; do
+        if [ "$key" = "$k" ]; then
+          # Evaluate current value of the variable named 'k'
+          eval "val=\${$k-}"
+          if [ -n "$val" ]; then
+            printf '%s=%s\n' "$k" "$val" >>"$tmp"
+          else
+            # Keep original line if new value is empty
+            printf '%s\n' "$line" >>"$tmp"
+          fi
           seen="$seen$k "
-          replaced=true
+          found=true
           break
         fi
       done
-      if [[ "$replaced" == false ]]; then
+      if [ "$found" = false ]; then
         printf '%s\n' "$line" >>"$tmp"
       fi
     done <"$file"
   fi
 
-  for k in "${keys[@]}"; do
+  for k in "$@"; do
     if [[ "$seen" != *" $k "* ]]; then
-      printf '%s=%s\n' "$k" "${!k-}" >>"$tmp"
+      eval "val=\${$k-}"
+      if [ -n "$val" ]; then
+        printf '%s=%s\n' "$k" "$val" >>"$tmp"
+      fi
     fi
   done
 
@@ -320,14 +348,19 @@ fi
 HOME_VOLUME_NAME="${OPENCLAW_HOME_VOLUME:-}"
 RAW_EXTRA_MOUNTS="${OPENCLAW_EXTRA_MOUNTS:-}"
 
+# Initialize variables with defaults (handled before tilde expansion)
 OPENCLAW_CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-$HOME/.openclaw}"
 OPENCLAW_WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-$HOME/.openclaw/workspace}"
-
-# 展开波浪号 Tilde (如果环境是从 .env 以字符串读入 '~' 的话)
-OPENCLAW_CONFIG_DIR="${OPENCLAW_CONFIG_DIR/#\~/$HOME}"
-OPENCLAW_WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR/#\~/$HOME}"
 OPENCLAW_GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
 OPENCLAW_BRIDGE_PORT="${OPENCLAW_BRIDGE_PORT:-18790}"
+
+# Handle tilde expansion (POSIX compliant)
+case "$OPENCLAW_CONFIG_DIR" in
+    \~*) OPENCLAW_CONFIG_DIR="$HOME${OPENCLAW_CONFIG_DIR#\~}" ;;
+esac
+case "$OPENCLAW_WORKSPACE_DIR" in
+    \~*) OPENCLAW_WORKSPACE_DIR="$HOME${OPENCLAW_WORKSPACE_DIR#\~}" ;;
+esac
 
 # 验证路径
 validate_mount_path_value "OPENCLAW_CONFIG_DIR" "$OPENCLAW_CONFIG_DIR"
@@ -355,13 +388,16 @@ export OPENCLAW_IMAGE="$IMAGE_NAME"
 # 检查并修复权限：如果目录已存在且属于其他用户，尝试自动修复
 repair_host_permissions() {
     local dir="$1"
+    if [[ "$IS_WINDOWS" == "true" ]]; then
+        return 0  # Skip on Windows host
+    fi
     if [[ -d "$dir" ]]; then
         # 兼容 Linux (stat -c) 和 macOS (stat -f)
         local dir_owner
         dir_owner=$(stat -c '%u' "$dir" 2>/dev/null || stat -f '%u' "$dir" 2>/dev/null || echo "0")
 
         if [[ "$dir_owner" != "$(id -u)" ]]; then
-            echo "  --> 发现目录 $dir 属于其他用户 (UID: $dir_owner)，尝试修复..."
+            echo "  --> 正在优化宿主机目录 $dir 的访问策略 (当前所有者 UID: $dir_owner)..."
 
             # 方案1: 尝试用 docker run 修复（需要 docker 权限）
             if docker info >/dev/null 2>&1; then
@@ -425,65 +461,18 @@ export OPENCLAW_GATEWAY_TOKEN
 # 构建镜像
 # ============================================================
 
-info "检查/拉取开发环境镜像: ${CYAN}$IMAGE_NAME${NC}"
+info "检查开发环境镜像: ${CYAN}$IMAGE_NAME${NC}"
 if is_truthy_value "${OPENCLAW_SKIP_BUILD:-}"; then
-  info "模式: ${BOLD}极速模式 (Fast Mode)${NC} - 正在拉取同步..."
-  docker pull "$IMAGE_NAME"
+  # 极速模式：尝试拉取镜像
+  if ! docker inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+    info "正在拉取镜像: ${BOLD}$IMAGE_NAME${NC}..."
+    docker pull "$IMAGE_NAME" || warn "无法拉取镜像，请检查网络或执行 'make build' 手动构建。"
+  fi
 else
-  info "模式: ${BOLD}开发模式 (Dev Mode)${NC} - 正在本地构建..."
-  if [[ ! -f "$ROOT_DIR/.openclaw_src/package.json" ]]; then
-    echo ""
-    fail "在 .openclaw_src 目录中未找到项目源码 (package.json)。\n提示: 请先运行 ${BOLD}make update${NC} 拉取源码。"
+  # 本地构建模式：验证镜像是否存在
+  if ! docker inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+    error "未找到镜像 ${BOLD}$IMAGE_NAME${NC}。\n提示: 本地开发模式下，请使用 ${BOLD}make build${NC} 构建镜像。\n原脚本中的内置构建逻辑已移除，以符合 DRY 原则（统一由 Makefile 管理）。"
   fi
-
-  # 选择 Dockerfile
-  DOCKERFILE_PATH="$ROOT_DIR/Dockerfile"
-  IS_VARIANT=false
-  # 1+3 架构: 变体依赖于标准版 (BASE_IMAGE)
-  BASE_IMAGE_TAG="${OPENCLAW_IMAGE_BASE:-openclaw-devkit:dev}"
-
-  if [[ "$IMAGE_NAME" == *"-java"* ]]; then
-    DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.java"
-    IS_VARIANT=true
-  elif [[ "$IMAGE_NAME" == *"-go"* ]]; then
-    DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.go"
-    IS_VARIANT=true
-  elif [[ "$IMAGE_NAME" == *"office"* ]]; then
-    DOCKERFILE_PATH="$ROOT_DIR/Dockerfile.office"
-    IS_VARIANT=true
-  fi
-
-  # 1+3 架构: 注入构建资产到上下文
-  cp -f "$ROOT_DIR"/Dockerfile* "$ROOT_DIR"/docker-entrypoint.sh "$ROOT_DIR"/.openclaw_src/ 2>/dev/null || true
-
-  # 如果是变体，必须先构建/确保基座镜像存在
-  if [ "$IS_VARIANT" = true ]; then
-    info "正在构建基座镜像: ${CYAN}${BASE_IMAGE_TAG}${NC}"
-    docker build \
-      -t "$BASE_IMAGE_TAG" \
-      -f "$ROOT_DIR/.openclaw_src/Dockerfile" \
-      --build-arg "INSTALL_BROWSER=${INSTALL_BROWSER}" \
-      --build-arg "DOCKER_MIRROR=${DOCKER_MIRROR:-docker.io}" \
-      --build-arg "APT_MIRROR=${APT_MIRROR:-deb.debian.org}" \
-      --build-arg "NPM_MIRROR=${NPM_MIRROR:-}" \
-      --build-arg "PYTHON_MIRROR=${PYTHON_MIRROR:-}" \
-      --build-arg "HTTP_PROXY=${HTTP_PROXY:-}" \
-      --build-arg "HTTPS_PROXY=${HTTPS_PROXY:-}" \
-      "$ROOT_DIR/.openclaw_src"
-  fi
-
-  info "正在构建目标镜像: ${CYAN}$IMAGE_NAME${NC}"
-  docker build \
-    -t "$IMAGE_NAME" \
-    -f "$ROOT_DIR/.openclaw_src/$(basename "$DOCKERFILE_PATH")" \
-    --build-arg "BASE_IMAGE=${BASE_IMAGE_TAG}" \
-    --build-arg "DOCKER_MIRROR=${DOCKER_MIRROR:-docker.io}" \
-    --build-arg "APT_MIRROR=${APT_MIRROR:-deb.debian.org}" \
-    --build-arg "NPM_MIRROR=${NPM_MIRROR:-}" \
-    --build-arg "PYTHON_MIRROR=${PYTHON_MIRROR:-}" \
-    --build-arg "HTTP_PROXY=${HTTP_PROXY:-}" \
-    --build-arg "HTTPS_PROXY=${HTTPS_PROXY:-}" \
-    "$ROOT_DIR/.openclaw_src"
 fi
 
 # ============================================================
@@ -527,6 +516,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 info "同步环境变量文件: ${CYAN}$ENV_FILE${NC}"
+# Use host paths for .env (required for docker-compose volume mounting)
+# The application inside will still use the internal paths via compose environment overrides.
 upsert_env "$ENV_FILE" \
   OPENCLAW_CONFIG_DIR \
   OPENCLAW_WORKSPACE_DIR \
@@ -536,6 +527,8 @@ upsert_env "$ENV_FILE" \
   OPENCLAW_IMAGE \
   OPENCLAW_EXTRA_MOUNTS \
   OPENCLAW_HOME_VOLUME \
+  HTTP_PROXY \
+  HTTPS_PROXY \
   OPENCLAW_SKIP_BUILD \
   COMPOSE_FILE \
   GIT_USER_NAME \
@@ -548,10 +541,12 @@ success "环境变量同步完成"
 
 echo ""
 # 修复数据目录权限
-# Use -xdev to restrict chown to the config-dir mount only
-# 使用 root 用户修复权限，限制由于 openclaw-cli 仅挂载了 .openclaw 且为统一存储池
-docker compose run --rm --user root --entrypoint sh openclaw-cli -c \
-  'find /home/node/.openclaw -xdev -exec chown node:node {} + 2>/dev/null || true'
+if [[ "$IS_WINDOWS" == "false" ]]; then
+  # Use -xdev to restrict chown to the config-dir mount only
+  # 使用 root 用户修复权限，限制由于 openclaw-cli 仅挂载了 .openclaw 且为统一存储池
+  docker compose run --rm --user root --entrypoint sh openclaw-cli -c \
+    'find /home/node/.openclaw -xdev -exec chown node:node {} + 2>/dev/null || true'
+fi
 
 # ============================================================
 # 辅助函数：运行 CLI 命令
@@ -566,8 +561,11 @@ run_cli() {
 # ============================================================
 
 echo ""
-info "部署网络服务..."
+info "正在调度 Docker 引擎启动服务容器..."
 docker compose up -d openclaw-gateway
+
+# 清理一次性的 init 容器
+docker rm openclaw-init >/dev/null 2>&1 || true
 
 # ============================================================
 # 完成提示
