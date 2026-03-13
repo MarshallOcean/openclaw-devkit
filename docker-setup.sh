@@ -1,47 +1,22 @@
-#!/usr/bin/env bash
-# OpenClaw 开发环境 Docker 部署脚本
-#
-# 用法:
-#   ./docker-setup.sh [选项]
-#
-# 选项:
-#   --no-browser    跳过浏览器安装（减少约 300MB）
-#   --help          显示帮助信息
-#
-# 环境变量:
-#   OPENCLAW_CONFIG_DIR     配置目录 (默认: ~/.openclaw)
-#   OPENCLAW_WORKSPACE_DIR  工作区目录 (默认: ~/.openclaw/workspace)
-#   OPENCLAW_EXTRA_MOUNTS   额外挂载点 (格式: src:dst[:ro],src2:dst2)
-#   OPENCLAW_HOME_VOLUME    命名卷名称 (可选，用于持久化整个 home)
-
-# Self-upgrade to bash if currently running in a more limited shell
-# This ensures we have access to pipefail, arrays, and other convenience features.
-if [ -z "$BASH_VERSION" ] && command -v bash >/dev/null 2>&1; then
-  exec bash "$0" "$@"
+# Hard Check: Ensure we are running in Bash (especially for Windows users)
+if [ -z "$BASH_VERSION" ]; then
+  echo "Error: This script REQUIRES Bash."
+  [ "$OSTYPE" = "msys" ] && echo "Hint: Please run this in 'Git Bash' instead of CMD/PowerShell."
+  exit 1
 fi
 
-set -eu
-if [ -n "$BASH_VERSION" ]; then set -o pipefail; fi
+set -euo pipefail
 
-# Portable way to get script directory
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="${OPENCLAW_IMAGE:-ghcr.io/hrygo/openclaw-devkit:latest}"
 
 # OS Detection
 IS_WINDOWS=false
-case "$OSTYPE" in
-  msys*|cygwin*|win32*) IS_WINDOWS=true ;;
-esac
-
-if [ "$IS_WINDOWS" = "true" ]; then
-  # Force UTF-8 encoding for Windows terminals
-  chcp.com 65001 > /dev/null 2>&1 || true
-fi
+[[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] && IS_WINDOWS=true
 
 # Self-Healing: Fix CRLF line endings in docker-entrypoint.sh if on Windows
 if [ -f "$ROOT_DIR/docker-entrypoint.sh" ]; then
-    # Use printf to avoid escaping issues with \r
-    if grep -q "$(printf '\r')" "$ROOT_DIR/docker-entrypoint.sh" 2>/dev/null; then
+    if grep -q $'\r' "$ROOT_DIR/docker-entrypoint.sh" 2>/dev/null; then
         echo "Detected CRLF line endings in docker-entrypoint.sh, converting to LF..."
         if command -v sed >/dev/null 2>&1; then
             sed -i 's/\r//g' "$ROOT_DIR/docker-entrypoint.sh"

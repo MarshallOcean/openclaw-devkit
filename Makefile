@@ -40,38 +40,32 @@ endif
 # Export HOME for docker compose visibility on Windows
 export HOME := $(HOME_DIR)
 
-# Portability Helpers
-ifeq ($(PLATFORM),Windows)
-    NOP := cd .
-    UTF8_FIX := chcp 65001 >nul 2>&1 &&
-    MKDIR := mkdir
-    RM    := del /q /s
-else
-    NOP := true
-    UTF8_FIX :=
-    MKDIR := mkdir -p
-    RM    := rm -rf
+# Check shell environment on Windows
+ifeq ($(OS),Windows_NT)
+    # Detect if we are in Git Bash / MSYS2 by looking for MSYSTEM or BASH_VERSION
+    ifeq ($(strip $(MSYSTEM)),)
+        ifeq ($(strip $(BASH_VERSION)),)
+            $(error $(shell echo 1>&2 " \
+                \n  [ ERROR ]  检测到非 POSIX 环境 (CMD/PowerShell)\n \
+                \n             OpenClaw DevKit 现已强制要求使用 Git Bash (Windows).\n \
+                \n             请安装 Git for Windows 并使用 'Git Bash' 终端运行此项目。\n \
+                \n             下载地址: https://git-scm.com/download/win\n\n"))
+        endif
+    endif
 endif
 
-# ANSI Colors (Calculated for portability)
-ifeq ($(PLATFORM),Windows)
-    # Windows cmd.exe fallbacks
-    RED    :=
-    GREEN  :=
-    YELLOW :=
-    BLUE   :=
-    CYAN   :=
-    BOLD   :=
-    NC     :=
-else
-    RED    := $(shell printf '\033[0;31m')
-    GREEN  := $(shell printf '\033[0;32m')
-    YELLOW := $(shell printf '\033[1;33m')
-    BLUE   := $(shell printf '\033[0;34m')
-    CYAN   := $(shell printf '\033[0;36m')
-    BOLD   := $(shell printf '\033[1m')
-    NC     := $(shell printf '\033[0m') # No Color
-endif
+# Common Commands (POSIX-Standard)
+MKDIR := mkdir -p
+RM    := rm -rf
+
+# ANSI Colors (Now reliable via Git Bash/Unix)
+RED    := $(shell printf '\033[0;31m')
+GREEN  := $(shell printf '\033[0;32m')
+YELLOW := $(shell printf '\033[1;33m')
+BLUE   := $(shell printf '\033[0;34m')
+CYAN   := $(shell printf '\033[0;36m')
+BOLD   := $(shell printf '\033[1m')
+NC     := $(shell printf '\033[0m') # No Color
 
 # Output Prefixes
 INFO    := $(BLUE)$(BOLD)==>$(NC)
@@ -111,41 +105,41 @@ DOCKER_BUILD_ARGS := --build-arg HTTP_PROXY=$(HTTP_PROXY) \
 # ============================================================
 
 help: ## 显示帮助信息
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)==>   OpenClaw DevKit   |  终端运维蓝图 $(NC)"
-	@$(UTF8_FIX) echo "  $(BOLD)══════════════════════════════════════════════════════════$(NC)"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)⚡  快速开始 (Zero-Friction) $(NC)"
-	@$(UTF8_FIX) echo "    $(BOLD)make install$(NC)            一键适配、生成及安装"
-	@$(UTF8_FIX) echo "    $(BOLD)make onboard$(NC)            交互式灵魂配置 (LLM/API)"
-	@$(UTF8_FIX) echo "    $(BOLD)make up$(NC)                 启动服务"
-	@$(UTF8_FIX) echo "    $(BOLD)make down$(NC)               停止服务"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)🔄  生命周期管理 $(NC)"
-	@$(UTF8_FIX) echo "    $(BOLD)make restart$(NC)           服务重启"
-	@$(UTF8_FIX) echo "    $(BOLD)make status$(NC)            查看分层编排状态"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)🔧  构建引擎 (Version: dev|go|java|office) $(NC)"
-	@$(UTF8_FIX) echo "    $(BOLD)make build$(NC)             感知式构建 (根据 SKIP_BUILD)"
-	@$(UTF8_FIX) echo "    $(BOLD)make rebuild$(NC)           强制更新镜像并重启"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)🐛  调试与诊断 $(NC)"
-	@$(UTF8_FIX) echo "    $(BOLD)make logs$(NC)              查看 Gateway 实时日志"
-	@$(UTF8_FIX) echo "    $(BOLD)make shell$(NC)             进入隔离沙盒 Shell"
-	@$(UTF8_FIX) echo "    $(BOLD)make test-proxy$(NC)        黑盒代理通配性测试"
-	@$(UTF8_FIX) echo "    $(BOLD)make verify$(NC)            工具链合规检查"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)$(CYAN)💾  持久化维护 $(NC)"
-	@$(UTF8_FIX) echo "    $(BOLD)make backup-config$(NC)     配置全量备份"
-	@$(UTF8_FIX) echo "    $(BOLD)make update$(NC)            从 GH 同步最新逻辑基因"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  $(BOLD)══════════════════════════════════════════════════════════$(NC)"
-	@$(UTF8_FIX) echo "  分级调用:  make <cmd> <version>"
-	@$(UTF8_FIX) echo "  ==>   dev  (标准) | go  (Go) | java  (Java) | office  (办公)"
-	@$(UTF8_FIX) echo ""
-	@$(UTF8_FIX) echo "  示例:  make install go "
-	@$(UTF8_FIX) echo "  $(BOLD)══════════════════════════════════════════════════════════$(NC)"
-	@$(UTF8_FIX) echo ""
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)==>   OpenClaw DevKit   |  终端运维蓝图 $(NC)\n"
+	@printf "  $(BOLD)══════════════════════════════════════════════════════════$(NC)\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)⚡  快速开始 (Zero-Friction) $(NC)\n"
+	@printf "    $(BOLD)make install$(NC)            一键适配、生成及安装\n"
+	@printf "    $(BOLD)make onboard$(NC)            交互式灵魂配置 (LLM/API)\n"
+	@printf "    $(BOLD)make up$(NC)                 启动服务\n"
+	@printf "    $(BOLD)make down$(NC)               停止服务\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)🔄  生命周期管理 $(NC)\n"
+	@printf "    $(BOLD)make restart$(NC)           服务重启\n"
+	@printf "    $(BOLD)make status$(NC)            查看分层编排状态\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)🔧  构建引擎 (Version: dev|go|java|office) $(NC)\n"
+	@printf "    $(BOLD)make build$(NC)             感知式构建 (根据 SKIP_BUILD)\n"
+	@printf "    $(BOLD)make rebuild$(NC)           强制更新镜像并重启\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)🐛  调试与诊断 $(NC)\n"
+	@printf "    $(BOLD)make logs$(NC)              查看 Gateway 实时日志\n"
+	@printf "    $(BOLD)make shell$(NC)             进入隔离沙盒 Shell\n"
+	@printf "    $(BOLD)make test-proxy$(NC)        黑盒代理通配性测试\n"
+	@printf "    $(BOLD)make verify$(NC)            工具链合规检查\n"
+	@printf "\n"
+	@printf "  $(BOLD)$(CYAN)💾  持久化维护 $(NC)\n"
+	@printf "    $(BOLD)make backup-config$(NC)     配置全量备份\n"
+	@printf "    $(BOLD)make update$(NC)            从 GH 同步最新逻辑基因\n"
+	@printf "\n"
+	@printf "  $(BOLD)══════════════════════════════════════════════════════════$(NC)\n"
+	@printf "  分级调用:  make <cmd> <version>\n"
+	@printf "  ==>   dev  (标准) | go  (Go) | java  (Java) | office  (办公)\n"
+	@printf "\n"
+	@printf "  示例:  make install go \n"
+	@printf "  $(BOLD)══════════════════════════════════════════════════════════$(NC)\n"
+	@printf "\n"
 
 # ============================================================
 # 版本选择 (伪目标)
@@ -168,12 +162,12 @@ dev: ## 内部: 选择标准版
 # ============================================================
 
 install: ## 首次安装/初始化环境
-	@$(UTF8_FIX) $(if $(filter Unix,$(PLATFORM)),chmod +x "$(SETUP_SCRIPT)",$(NOP))
-	@$(UTF8_FIX) $(call select_image,$(MAKECMDGOALS)) $(NOP)
-	@$(UTF8_FIX) echo "$(INFO) 目标环境: $(BOLD)$(YELLOW)$(IMAGE_NAME)$(NC)"
-	@$(UTF8_FIX) OPENCLAW_IMAGE="$(IMAGE_NAME)" sh "$(SETUP_SCRIPT)"
-	@$(UTF8_FIX) echo "$(SUCCESS) $(GREEN)环境安装完毕!$(NC)"
-	@$(UTF8_FIX) echo "  $(INFO) 提示: 首次安装后，请执行 $(BOLD)make onboard$(NC) 以交互式引导配置 LLM 与 聊天应用。"
+	@$(if $(filter Unix,$(PLATFORM)),chmod +x "$(SETUP_SCRIPT)",)
+	@$(call select_image,$(MAKECMDGOALS))
+	@echo "$(INFO) 目标环境: $(BOLD)$(YELLOW)$(IMAGE_NAME)$(NC)"
+	@OPENCLAW_IMAGE="$(IMAGE_NAME)" bash "$(SETUP_SCRIPT)"
+	@echo "$(SUCCESS) $(GREEN)环境安装完毕!$(NC)"
+	@echo "  $(INFO) 提示: 首次安装后，请执行 $(BOLD)make onboard$(NC) 以交互式引导配置 LLM 与 聊天应用。"
 
 up: ## 启动服务
 	@docker compose up -d
@@ -181,8 +175,8 @@ up: ## 启动服务
 	@echo "提示: 初次使用建议运行 'make onboard' 进行交互式配置。"
 
 onboard: ## 启动交互式引导程序
-	@$(UTF8_FIX) echo "$(INFO) 启动交互式引导程序..."
-	@$(UTF8_FIX) docker compose run --rm -it openclaw-cli openclaw onboard
+	@echo "$(INFO) 启动交互式引导程序..."
+	@docker compose run --rm -it openclaw-cli openclaw onboard
 
 down: ## 停止服务
 	@docker compose down
