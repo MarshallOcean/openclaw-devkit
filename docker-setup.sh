@@ -73,11 +73,11 @@ warn() {
 }
 
 success() {
-  echo -e "${SUCCESS}${GREEN}$*${NC}"
+  echo "${SUCCESS}${GREEN}$*${NC}"
 }
 
 info() {
-  echo -e "${INFO} $*"
+  echo "${INFO} $*"
 }
 
 require_cmd() {
@@ -546,7 +546,7 @@ run_cli() {
 # ============================================================
 
 echo ""
-info "部署网络服务..."
+info "正在调度 Docker 引擎启动服务容器..."
 docker compose up -d openclaw-gateway
 
 # 清理一次性的 init 容器
