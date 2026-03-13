@@ -70,7 +70,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
     # If still missing, run official setup
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "--> Running official OpenClaw onboarding (non-interactive)..."
-        run_as_node openclaw onboard --non-interactive --accept-risk
+        # Allow failure here; often the config is created but a secondary gateway check fails.
+        run_as_node openclaw onboard --non-interactive --accept-risk || true
     fi
 fi
 

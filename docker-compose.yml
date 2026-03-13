@@ -83,6 +83,7 @@ services:
   # ============================================================================
   openclaw-init:
     <<: *openclaw-common
+    user: "0:0"
     container_name: openclaw-init
     # Don't restart - this is a one-shot job
     restart: "no"
