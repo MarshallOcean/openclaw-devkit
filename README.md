@@ -119,7 +119,8 @@ make install office
 | :--- | :--- | :--- |
 | 1️⃣ 启动 | `make up` | 启动容器服务 |
 | 2️⃣ 配置 | `make onboard` | 交互式配置 LLM、飞书、频道等 |
-| 3️⃣ 访问 | [http://127.0.0.1:18789](http://127.0.0.1:18789) | Web 控制台 |
+| 3️⃣ 访问 | `make dashboard` | **🚀 一键免密直通仪表盘** |
+| 4️⃣ 配对 | `make approve` | 自动批准 Web UI 的配对请求 |
 
 ---
 

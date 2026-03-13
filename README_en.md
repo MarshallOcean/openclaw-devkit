@@ -119,7 +119,8 @@ Available image tags: `latest`, `go`, `java`, `office`
 | :---------- | :----------------------------------------------- | :------------------------------------------ |
 | 1️⃣ Start     | `make up`                                        | Start container services                    |
 | 2️⃣ Configure | `make onboard`                                   | Interactive setup for LLM, Feishu, channels |
-| 3️⃣ Access    | [http://127.0.0.1:18789](http://127.0.0.1:18789) | Web console                                 |
+| 3️⃣ Access    | `make dashboard` | **🚀 One-click authenticated access** |
+| 4️⃣ Pair      | `make approve`    | Auto-approve Web UI pairing requests|
 
 ---
 

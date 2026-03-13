@@ -145,7 +145,32 @@ make clean-volumes   # 所有数据卷（慎用）
 
 ---
 
-## 7. 架构优势
+## 8. UX 优化 (DevKit Cockpit)
+
+为了提升 DevKit 的开箱即用体验，v1.6.2+ 引入了 Cockpit 运维引擎：
+
+### 8.1 一键直达 (Dashboard)
+- **命令**：`make dashboard`
+- **逻辑**：自动获取容器内 Gateway Token 并生成带身份的 URL。
+- **优势**：绕过初次访问的 `pairing required` 拦截，一键直达仪表盘。
+
+### 8.2 自动化配对 (Approve)
+- **命令**：`make approve`
+- **逻辑**：自动识别 Web UI 发出的最新 `pending` 请求 ID 并批准。
+- **场景**：如果您已打开网页正处于“待配对”状态，运行此命令可立即放行。
+
+---
+
+## 9. Windows / WSL 性能适配
+
+由于 Windows 文件系统挂载性能较慢，我们针对性调整了 Docker 健康检查：
+- **宽限期 (`start_period`)**：延长至 60s，给宿主机 IO 留足初始化缓冲。
+- **重试 (`retries`)**：增加至 10次。
+- **自愈**：`openclaw-init` 已合入主容器入口，启动时自动执行 `doctor --fix`。
+
+---
+
+## 10. 架构优势
 
 - **DRY**: 构建逻辑收拢在 Makefile
 - **缓存**: 更新版本时 Layer I/II 来自本地缓存
