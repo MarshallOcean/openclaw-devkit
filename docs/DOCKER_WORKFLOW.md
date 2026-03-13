@@ -1,177 +1,82 @@
-# Docker 构建架构与流程
+# OpenClaw DevKit Docker 核心工作流
 
-采用 **分层运行时 (Hierarchical Runtime)** 架构，将静态 SDK 环境与动态应用分离，实现极致构建速度。
-
----
-
-## 1. 分层架构
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Layer III: Product Layer - 构建频率: 高                                        │
-│ ghcr.io/hrygo/openclaw-devkit:latest | :go | :java | :office              │
-│ 包含: OpenClaw 官方 Release (openclaw.ai)                                   │
-└───────────────────┬─────────────────────────────────┬─────────────────────┘
-                    │ FROM                             │ FROM
-┌───────────────────┴─────────────────────────────────┴─────────────────────┐
-│ Layer II: Stack Runtimes - 构建频率: 低                                      │
-│ ghcr.io/hrygo/openclaw-runtime:go | :java | :office                       │
-│ 包含: Go 1.26, JDK 21, LibreOffice, Python IDP                             │
-└───────────────────────────────────┬───────────────────────────────────────┘
-                                    │ FROM
-┌───────────────────────────────────┴───────────────────────────────────────┐
-│ Layer I: Base Foundation - 构建频率: 极低                                   │
-│ ghcr.io/hrygo/openclaw-runtime:base                                        │
-│ 包含: Debian Bookworm, Node.js 22, Bun, uv, Playwright                     │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+本文档面向开发者和运维，深入说明 OpenClaw DevKit 的 Docker 编排架构、版本策略及高级运维逻辑。
 
 ---
 
-## 2. 本地构建
+## 1. 架构拓扑 (Orchestration)
+
+DevKit 采用**“网关中心化 (Gateway-Centered)”**架构，主要由以下服务组成：
+
+- **`openclaw-gateway`**: 核心逻辑容器，承载协议网关、Bot 编排引擎。
+- **`openclaw-cli`**: 任务容器，作为 `onboard`、`cli` 等交互式后台指令的运行环境。
+- **持久化卷**: 
+    - `~/.openclaw`: 宿主机挂载点，存储 JSON 配置、工作区产物及加密密钥。
+    - `openclaw-state`: Docker 内部卷，存储高频变动的数据库会话。
+
+---
+
+## 2. Windows / WSL 专项适配 (Performance Tuning)
+
+针对 Windows 宿主机文件系统挂载产生的 I/O 延迟，DevKit 内置了**性能宽限策略**：
+- **健康检查延迟**：`start_period` 设置为 60s，确保在缓慢的机械硬盘或 WSL2 挂载点上也有充足的自愈时间。
+- **长效重试**：健康检查具备 10 次重试机制，防止波动导致的服务意外重启。
+- **非 root 隔离**：全系镜像强制以 `node` 用户运行，同时启动脚本会自动纠正宿主机卷的 `chown` 权限，确保 Windows/Mac 跨平台文件读写一致性。
+
+---
+
+## 3. 镜像版本与更新策略
+
+### 3.1 环境预设 (Flavors)
+| 镜像标签 | 核心工具集成 |
+| :--- | :--- |
+| `latest` | Node.js, Claude Code, Playwright, Python |
+| `go` | 基础版 + Golang 1.26 完整工具链 |
+| `java` | 基础版 + OpenJDK 21, Gradle, Maven |
+| `office` | 基础版 + LibreOffice, pandoc, 文档加工工具 |
+
+### 3.2 更新机制 (The Rebuild Logic)
+为了平衡安装速度与版本实时性，系统遵循以下逻辑：
+- **`make install` (本地优先)**：如果本地存在镜像，则直接启动。这是为了保证在网络不稳时也能极速进入开发。
+- **`make rebuild` (云端拉取)**：当需要同步 GitHub Registry 的最新特性或修复时，执行此命令。它会检查 Digest 并强制拉取最新的 Layer。
+
+---
+
+## 4. Cockpit 运维引擎 (Automation)
+
+为了提升开发者体验，DevKit 内置了 Cockpit 自动化工具组：
+
+### 4.1 认证绕避 (Automation Bypass)
+- **`make dashboard`**: 通过容器内 `openclaw dashboard --no-open` 获取动态授权。
+- **原理**：直接读取 Gateway 的认证令牌并拼接为 URL，解决 `pairing required` 拦截导致的首次进入难问题。
+
+### 4.2 自动配对 (Approval Automation)
+- **`make approve`**: 使用 `jq` 自动解析待处理配对列表。
+- **场景**：无需查阅 ID 即可批准最新的 Web UI 接入请求。
+
+---
+
+## 5. 配置自愈与外科手术 (Configuration Surgery)
+
+镜像入口脚本 `docker-entrypoint.sh` 具备**外科手术级**的配置修复能力：
+- **深度净化**：启动时自动剔除旧版本中不再受支持、可能导致 Schema 校验失败的过期配置节点。
+- **网络强固**：强制设置 `gateway.bind = "all"`，确保 Docker 网络环境下宿主机能稳定访问 18789 端口。
+- **Origin 合规**：自动注入 `allowedOrigins` 白名单，确保携带 Token 的请求通过 CSRF 校验。
+
+---
+
+## 6. 排障常用命令
 
 ```bash
-# 构建标准版
-make build
+# 1. 检查 Gateway 实时流水日志
+make logs
 
-# 构建指定版本
-make build-go
-make build-java
-make build-office
+# 2. 检查配置文件的 JSON 有效性
+make verify
+
+# 3. 强制重排所有网络与容器
+make restart
+
+# 4. 彻底清理数据卷（环境重置）
+make clean-volumes
 ```
-
-**执行流程**:
-```
-make build-go
-       │
-       ▼
-检查是否存在 openclaw-runtime:go
-       │
-       ▼
-docker build -f Dockerfile
-  --build-arg BASE_IMAGE=openclaw-runtime:go
-  -t ghcr.io/hrygo/openclaw-devkit:go .
-       │
-       ▼
-FROM openclaw-runtime:go (已包含 Go SDK)
-RUN npm install -g openclaw
-```
-
----
-
-## 3. CI/CD 构建
-
-由 `.github/workflows/docker-publish.yml` 驱动：
-
-```
-[prepare] ─────────────────────────────┐
-      │                                │
-      ▼                                ▼
-[build-base]                          │ 感知版本
-      │                                │
-      ▼                                │
-[build-stacks] ───────────────┐        │
-      │                       │        │
-      ▼                       ▼        ▼
-[build-products] <───────────┴────────┘
-      │
-      ▼
-推送至 GHCR:
-  ghcr.io/hrygo/openclaw-runtime:base
-  ghcr.io/hrygo/openclaw-runtime:{go,java,office}
-  ghcr.io/hrygo/openclaw-devkit:{latest,go,java,office}
-  ghcr.io/hrygo/openclaw-devkit:v1.6.2
-```
-
----
-
-## 4. 构建参数
-
-| 参数               | 默认值           | 说明            |
-| :----------------- | :--------------- | :-------------- |
-| `HTTP_PROXY`       | -                | 网络代理        |
-| `APT_MIRROR`       | `deb.debian.org` | Debian 镜像     |
-| `OPENCLAW_VERSION` | `latest`         | OpenClaw 版本   |
-| `INSTALL_BROWSER`  | `1`              | 安装 Playwright |
-
----
-
-## 5. 运维变量
-
-| 变量                     | 默认值                          | 说明         |
-| :----------------------- | :------------------------------ | :----------- |
-| `OPENCLAW_CONFIG_DIR`    | `~/.openclaw`                   | 配置目录     |
-| `OPENCLAW_WORKSPACE_DIR` | `~/.openclaw/workspace`         | 工作区       |
-| `OPENCLAW_GATEWAY_PORT`  | `18789`                         | Gateway 端口 |
-| `OPENCLAW_IMAGE`         | `ghcr.io/hrygo/openclaw-devkit` | 镜像名       |
-
----
-
-## 6. 镜像更新策略 (Image Update Strategy)
-
-为了平衡**安装速度**与**版本时效性**，DevKit 采用以下优先级：
-
-### 6.1 优先级逻辑
-1. **本地优先 (`make install`)**：
-   - 脚本首先检查本地是否存在对应标签的镜像。
-   - 若存在，直接启动，**不主动联机检查**版本差异。
-2. **强制拉取 (`make rebuild`)**：
-   - 调用 `docker pull`。Docker 引擎会检查本地与远程 Registry 的 Image Digest。
-   - 若远程有更新，自动下载并替换，随后重启容器。
-
-### 6.2 常用方案
-| 场景                | 命令                  | 行为                               |
-| :------------------ | :-------------------- | :--------------------------------- |
-| **首次安装**        | `make install`        | 拉取镜像并初始化环境               |
-| **日常启动**        | `make up`             | 快速启动，无网络开销               |
-| **跟进新特性/修复** | `make rebuild`        | **检测更新**、拉取并重启           |
-| **手动维护**        | `docker pull <image>` | 仅手动更新镜像，不影响运行中的容器 |
-
----
-
-## 7. 排查
-
-### 权限问题
-```bash
-# 修复宿主机目录权限
-sudo chown -R 1000:1000 ~/.openclaw
-```
-
-### 清理
-```bash
-make clean            # 容器和悬空镜像
-make clean-volumes   # 所有数据卷（慎用）
-```
-
----
-
-## 8. UX 优化 (DevKit Cockpit)
-
-为了提升 DevKit 的开箱即用体验，v1.6.2+ 引入了 Cockpit 运维引擎：
-
-### 8.1 一键直达 (Dashboard)
-- **命令**：`make dashboard`
-- **逻辑**：自动获取容器内 Gateway Token 并生成带身份的 URL。
-- **优势**：绕过初次访问的 `pairing required` 拦截，一键直达仪表盘。
-
-### 8.2 自动化配对 (Approve)
-- **命令**：`make approve`
-- **逻辑**：自动识别 Web UI 发出的最新 `pending` 请求 ID 并批准。
-- **场景**：如果您已打开网页正处于“待配对”状态，运行此命令可立即放行。
-
----
-
-## 9. Windows / WSL 性能适配
-
-由于 Windows 文件系统挂载性能较慢，我们针对性调整了 Docker 健康检查：
-- **宽限期 (`start_period`)**：延长至 60s，给宿主机 IO 留足初始化缓冲。
-- **重试 (`retries`)**：增加至 10次。
-- **自愈**：`openclaw-init` 已合入主容器入口，启动时自动执行 `doctor --fix`。
-
----
-
-## 10. 架构优势
-
-- **DRY**: 构建逻辑收拢在 Makefile
-- **缓存**: 更新版本时 Layer I/II 来自本地缓存
-- **独立**: 各层可独立测试和发布
