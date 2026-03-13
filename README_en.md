@@ -75,7 +75,8 @@ make onboard
 ```
 
 > [!NOTE]
-> `make install` automates: directory creation, `.env` config generation, pulling the latest images, and fixing host permissions.
+> `make install` automates: directory creation, `.env` config generation, image synchronization, and fixing host permissions.
+> **Note**: To ensure installation speed, `make install` prioritizes existing local images. **If this is not your first installation, it is recommended to run `make rebuild` to pull the latest image version.**
 
 ---
 
@@ -146,19 +147,18 @@ Ensure your proxy has "Allow LAN Connections" enabled. Run `make test-proxy` to 
 </details>
 
 <details>
-<summary><b>Q: How to switch versions?</b></summary>
+<summary><b>Q: How to force update images to the latest version?</b></summary>
 
+`make install` uses local cache by default. To detect and update remote images, run:
 ```bash
-# Go edition
-make rebuild go
-
-# Java edition
-make rebuild java
-
-# Office edition
-make rebuild office
+make rebuild
 ```
+Or manually execute `docker pull ghcr.io/hrygo/openclaw-devkit:latest`.
 </details>
+
+<details>
+<summary><b>Q: How to switch versions?</b></summary>
+...
 
 <details>
 <summary><b>Q: Where are config files?</b></summary>

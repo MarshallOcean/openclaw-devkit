@@ -80,7 +80,7 @@ RUN npm install -g openclaw
   ghcr.io/hrygo/openclaw-runtime:base
   ghcr.io/hrygo/openclaw-runtime:{go,java,office}
   ghcr.io/hrygo/openclaw-devkit:{latest,go,java,office}
-  ghcr.io/hrygo/openclaw-devkit:v1.5.0
+  ghcr.io/hrygo/openclaw-devkit:v1.5.1
 ```
 
 ---
@@ -107,7 +107,29 @@ RUN npm install -g openclaw
 
 ---
 
-## 6. 排查
+## 6. 镜像更新策略 (Image Update Strategy)
+
+为了平衡**安装速度**与**版本时效性**，DevKit 采用以下优先级：
+
+### 6.1 优先级逻辑
+1. **本地优先 (`make install`)**：
+   - 脚本首先检查本地是否存在对应标签的镜像。
+   - 若存在，直接启动，**不主动联机检查**版本差异。
+2. **强制拉取 (`make rebuild`)**：
+   - 调用 `docker pull`。Docker 引擎会检查本地与远程 Registry 的 Image Digest。
+   - 若远程有更新，自动下载并替换，随后重启容器。
+
+### 6.2 常用方案
+| 场景 | 命令 | 行为 |
+| :--- | :--- | :--- |
+| **首次安装** | `make install` | 拉取镜像并初始化环境 |
+| **日常启动** | `make up` | 快速启动，无网络开销 |
+| **跟进新特性/修复** | `make rebuild` | **检测更新**、拉取并重启 |
+| **手动维护** | `docker pull <image>` | 仅手动更新镜像，不影响运行中的容器 |
+
+---
+
+## 7. 排查
 
 ### 权限问题
 ```bash

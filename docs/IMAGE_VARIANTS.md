@@ -69,12 +69,12 @@ LibreOffice | OCRmyPDF | Tesseract | Docling | Marker-PDF | pandas | polars
 
 ```bash
 # 安装
-make install           # 标准版
+make install           # 标准版（优先使用本地镜像）
 make install go
 make install java
 make install office
 
-# 切换
-make rebuild go        # 重建并重启
-make build java        # 仅构建
+# 切换与强制更新
+make rebuild go        # 检测并拉取最新镜像，重启容器
+make build java        # 仅构建（若本地已有镜像则跳过构建直接下载或基于缓存）
 ```

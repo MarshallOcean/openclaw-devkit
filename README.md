@@ -75,7 +75,8 @@ make onboard
 ```
 
 > [!NOTE]
-> `make install` 会自动完成：创建数据目录、生成 `.env` 配置、拉取最新镜像以及修复宿主机权限。
+> `make install` 会自动完成：创建数据目录、生成 `.env` 配置、同步镜像以及修复宿主机权限。
+> **注意**：为了保证安装速度，`make install` 优先使用本地已有的镜像。**如果您不是首次安装，建议执行 `make rebuild` 以拉取最新镜像版本。**
 
 ---
 
@@ -146,19 +147,18 @@ make install office
 </details>
 
 <details>
-<summary><b>Q: 如何切换版本？</b></summary>
+<summary><b>Q: 如何强制更新镜像到最新版本？</b></summary>
 
+`make install` 默认使用本地缓存。若要检测并更新远程镜像，请运行：
 ```bash
-# Go 开发版
-make rebuild go
-
-# Java 增强版
-make rebuild java
-
-# Office 办公版
-make rebuild office
+make rebuild
 ```
+或手动执行 `docker pull ghcr.io/hrygo/openclaw-devkit:latest`。
 </details>
+
+<details>
+<summary><b>Q: 如何切换版本？</b></summary>
+...
 
 <details>
 <summary><b>Q: 配置文件在哪？</b></summary>

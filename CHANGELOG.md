@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.1] - 2026-03-13
+
+### Added
+- **Image Update Strategy**: Clearly defined the difference between `make install` (fast/local-first) and `make rebuild` (force sync/update) in documentation and FAQ.
+- **Image Update FAQ**: Added troubleshooting entries for forcing image updates to the latest remote version.
+
+### Fixed
+- **Windows Bulletproof Compatibility**: 
+    - Forced UTF-8 encoding across `Makefile` and interactive `onboard` sessions to prevent mojibake/encoding issues.
+    - Automated LF line-ending normalization for shell scripts via `.gitattributes` and self-healing scripts.
+    - Improved shell environment detection (recommending Git Bash) and enhanced tilde expansion robustness.
+    - Resolved `EACCES /Users` permission errors on Windows by switching from host-paths to container-relative paths in `.env` where necessary.
+- **Container Resilience**:
+    - Forced `0.0.0.0` binding for the gateway to ensure accessible networking across all environments.
+    - Fixed `HOME` directory handling for the `node` user in specialized image variants.
+    - Improved `onboard` target to be more resilient to non-fatal errors by restoring missing command prefixes.
+- **Documentation Integrity**:
+    - Audited and removed several "hallucinated" or obsolete commands (e.g., `make update`) from documentation.
+    - Synchronized documentation parity between Chinese and English versions.
+
 ## [v1.5.0] - 2026-03-12
 
 ### Added
