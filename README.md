@@ -69,6 +69,9 @@ make onboard
 
 # 3. 开启全人工直联 (推荐)
 make dashboard
+
+# 4. 批准配对请求 (首次访问 Web UI)
+make approve
 ```
 
 > [!NOTE]

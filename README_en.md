@@ -69,6 +69,9 @@ make onboard
 
 # 3. Direct Access (Recommended)
 make dashboard
+
+# 4. Approve Pairing Request (First-time Web UI Access)
+make approve
 ```
 
 > [!NOTE]
