@@ -24,6 +24,11 @@ if [ "$(id -u)" = "0" ]; then
     if [ -d "$SEED_DIR" ]; then
         chown -R node:node -- "$SEED_DIR" 2>/dev/null || true
     fi
+    # Fix Go module cache permissions (Docker volume may be owned by root)
+    if [ -d "/home/node/go" ]; then
+        echo "--> Fixing Go module cache permissions..."
+        chown -R node:node /home/node/go 2>/dev/null || true
+    fi
 fi
 
 # 1.8 Direct Initialization Check (Consolidated from openclaw-init)
