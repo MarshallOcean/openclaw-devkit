@@ -46,6 +46,14 @@ x-openclaw-common: &openclaw-common
     # Fallback for host HOME to satisfy docker-compose volume interpolation on Windows
     HOST_HOME: ${HOME:-${USERPROFILE:-/tmp}}
     TERM: xterm-256color
+    # ─────────────────────────────────────────────────────────────────
+    # Python Tools Auto-Install (space-separated, format: pkg[:bin])
+    # Examples: "notebooklm", "pandas", "black:blackd"
+    # Tools are installed to system Python via uv on first startup
+    # ─────────────────────────────────────────────────────────────────
+    PIP_TOOLS: ${PIP_TOOLS:-notebooklm-py:notebooklm}
+    # NotebookLM config path (shared with host via bind mount)
+    NOTEBOOKLM_STORAGE: /home/node/.notebooklm/storage_state.json
   extra_hosts:
     - "host.docker.internal:host-gateway"
   logging: &common-logging
@@ -91,6 +99,7 @@ services:
     ports:
       - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      - "127.0.0.1:${OPENCLAW_BROWSER_PORT:-18791}:18791"
     env_file:
       - .env
     environment:
@@ -112,6 +121,8 @@ services:
       # === 可选挂载 (Optional) - 根据需求选择 ===
       # Claude Code session state (shared with host)
       - ${HOME:-${USERPROFILE:-/tmp}}/.claude:/home/node/.claude:rw
+      # NotebookLM auth and config (shared with host)
+      - ${HOME:-${USERPROFILE:-/tmp}}/.notebooklm:/home/node/.notebooklm:rw
       # Named volumes for caches (optional, speeds up restarts)
       - openclaw-node-modules:/app/node_modules:rw
       - openclaw-go-mod:/home/node/go/pkg/mod:rw
@@ -169,6 +180,8 @@ services:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw-seed:ro
       # Unified state volume for persistent container data
       - openclaw-state:/home/node/.openclaw:rw
+      # NotebookLM auth and config (shared with host)
+      - ${HOME:-${USERPROFILE:-/tmp}}/.notebooklm:/home/node/.notebooklm:rw
     stdin_open: true
     tty: true
     # CLI 是交互式容器，不需要健康检查

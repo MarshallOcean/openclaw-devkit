@@ -29,6 +29,16 @@ if [ "$(id -u)" = "0" ]; then
         echo "--> Fixing Go module cache permissions..."
         chown -R node:node /home/node/go 2>/dev/null || true
     fi
+    # Fix pip packages directory permissions (for PIP_TOOLS persistence)
+    if [ -d "/home/node/.local" ]; then
+        echo "--> Fixing pip packages permissions..."
+        chown -R node:node /home/node/.local 2>/dev/null || true
+    fi
+    # Fix notebooklm directory permissions (shared with host)
+    if [ -d "/home/node/.notebooklm" ]; then
+        echo "--> Fixing notebooklm permissions..."
+        chown -R node:node /home/node/.notebooklm 2>/dev/null || true
+    fi
 fi
 
 # 1.8 Direct Initialization Check (Consolidated from openclaw-init)
@@ -121,6 +131,38 @@ if [ -d "$CLAUDE_SEED" ]; then
     run_as_node mkdir -p "$CLAUDE_DIR"
     # Copy missing/updated skills from our staging layer into the live mount (-r for recursive, -n to not overwrite user edits if any)
     run_as_node cp -Rn "$CLAUDE_SEED"/* "$CLAUDE_DIR/" 2>/dev/null || true
+fi
+
+# 2.6 Auto-install pip tools (reinstalled on rebuild via entrypoint)
+# Set PIP_TOOLS env var to install additional packages, e.g., PIP_TOOLS="notebooklm pandas"
+if [ -n "${PIP_TOOLS:-}" ]; then
+    echo "--> Checking pip tools: $PIP_TOOLS"
+
+    for tool in $PIP_TOOLS; do
+        # Extract package name (before :) and binary name (after :) if specified
+        pkg_name="${tool%%:*}"
+        bin_name="${tool#*:}"
+        [ "$bin_name" = "$pkg_name" ] && bin_name="$pkg_name"
+
+        # Check if binary exists
+        if ! command -v "$bin_name" >/dev/null 2>&1; then
+            echo "--> Installing $pkg_name..."
+            # Use uv for fast installation (available in DevKit images)
+            if command -v uv >/dev/null 2>&1; then
+                uv pip install --system --break-system-packages --no-cache "$pkg_name" 2>/dev/null || true
+            else
+                echo "--> Warning: uv not available, skipping $pkg_name"
+            fi
+        else
+            echo "--> $bin_name already installed, skipping."
+        fi
+    done
+
+    # Create symlink for notebooklm config (CLI looks in /root/.notebooklm)
+    if [ -d "/home/node/.notebooklm" ] && [ ! -d "/root/.notebooklm" ]; then
+        ln -sf /home/node/.notebooklm /root/.notebooklm
+        echo "--> Linked /root/.notebooklm -> /home/node/.notebooklm"
+    fi
 fi
 
 # 2.8 Identity Injection: Configure Git if environment variables are provided
