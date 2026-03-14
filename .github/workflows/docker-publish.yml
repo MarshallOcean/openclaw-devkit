@@ -37,6 +37,9 @@ jobs:
   # Job 1: Check upstream version and determine if publish is needed
   check-upstream:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: read
     outputs:
       has_new_version: ${{ steps.check.outputs.has_new_version }}
       latest_version: ${{ steps.check.outputs.latest_version }}
@@ -102,6 +105,8 @@ jobs:
   prepare:
     needs: check-upstream
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       repo_owner: ${{ steps.repo.outputs.owner }}
