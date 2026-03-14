@@ -45,6 +45,9 @@ jobs:
       latest_version: ${{ steps.check.outputs.latest_version }}
       should_publish: ${{ steps.check.outputs.should_publish }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Check upstream version
         id: check
         run: |
