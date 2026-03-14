@@ -151,8 +151,12 @@ In container at `~/.openclaw/`, persisted on host via `openclaw-state` volume.
 | [Image Variants](./docs/IMAGE_VARIANTS.md) | 1+3 architecture and version differences | `latest`, `go`, `java`, `office` tags |
 | [Docker Workflow](./docs/DOCKER_WORKFLOW.md) | Local development and CI/CD process | `make` commands, GitHub Actions logic |
 | [Quick Start Guide](./docs/USER_ONBOARDING.md) | Configuration and environment variables | `.env` setup, Claude API configuration |
-| [Feishu/Slack Setup](./docs/FEISHU_SETUP_BEGINNER_en.md) | Chat app and AI Agent integration | Bot creation, Webhook configuration |
+| [Feishu Setup](./docs/FEISHU_SETUP_en.md) | Feishu chat app integration | Bot creation, Webhook configuration |
+| [Slack Setup](./docs/SLACK_SETUP_BEGINNER_en.md) | Slack integration with OpenClaw | Bot creation, Socket Mode setup |
+| [NotebookLM Skill](./docs/NOTEBOOKLM_SKILL_en.md) | NotebookLM CLI integration guide | Podcast generation, source management, export |
 | [Reference Manual](./docs/REFERENCE_en.md) | Detailed Makefile command reference | Advanced ops, Troubleshooting |
+
+**External Resources**: [OpenClaw Docs](https://docs.openclaw.ai) | [Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code) | [notebooklm-py GitHub](https://github.com/teng-lin/notebooklm-py)
 
 ---
 

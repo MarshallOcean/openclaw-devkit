@@ -169,140 +169,72 @@ notebooklm skill status
 
 ## Practical Examples
 
-### Example 1: OpenClaw Skill Authoring Best Practices
+### Example 1: Research Agent Skills Best Practices
 
-**Scenario**: Learn how to write high-quality NotebookLM Skills for OpenClaw, following official Agent Skills best practices.
+**Scenario**: Use NotebookLM to research Claude Agent Skills best practices and generate a podcast for listening during commute.
 
-This example is based on the [Claude Agent Skills Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) official guide.
+This example demonstrates core NotebookLM Skill usage: create notebook → add source → generate content → download.
 
-#### Core Principles Quick Reference
-
-| Principle | Description |
-|:----------|:------------|
-| **Concise is key** | Assume OpenClaw already has basic capabilities, only add necessary context |
-| **Degrees of freedom** | Fragile operations = low freedom (exact scripts); flexible tasks = high freedom (text instructions) |
-| **Progressive disclosure** | SKILL.md < 500 lines, details in referenced files |
-| **Workflow checklists** | Use copyable checklists for complex tasks |
-| **Effective descriptions** | Third person, include trigger keywords |
-
-#### Recommended Skill Directory Structure
-
-```
-~/.claude/commands/notebooklm/
-├── SKILL.md              # Main file (overview + quick start)
-├── REFERENCE.md          # Complete CLI command reference
-└── EXAMPLES.md           # Input/output examples
-```
-
-#### SKILL.md Template (Following Best Practices)
-
-```markdown
----
-name: notebooklm
-description: Manage Google NotebookLM notebooks, sources, and artifacts. Use when the user mentions NotebookLM, podcasts, generating audio/video from documents, or asks to create learning materials from sources.
----
-
-# NotebookLM Skill
-
-Complete API for Google NotebookLM - create notebooks, add sources, generate podcasts/videos/quizzes, and download in multiple formats.
-
-## Quick start
-
-Create a podcast from web sources:
-
-```bash
-notebooklm create "Research Topic"
-notebooklm use <id>
-notebooklm source add "https://example.com/article" --wait
-notebooklm generate audio "engaging discussion style" --wait
-notebooklm download audio ./podcast.mp3
-```
-
-## Common operations
-
-**Add sources**: See [REFERENCE.md](REFERENCE.md#sources)
-**Generate content**: See [REFERENCE.md](REFERENCE.md#generate)
-**Examples**: See [EXAMPLES.md](EXAMPLES.md)
-
-## Content types
-
-| Type | CLI command | Output formats |
-|:-----|:------------|:---------------|
-| Audio (podcast) | `generate audio` | MP3, MP4 |
-| Video | `generate video` / `cinematic-video` | MP4 |
-| Quiz | `generate quiz` | JSON, Markdown, HTML |
-| Flashcards | `generate flashcards` | JSON, Markdown, HTML |
-
-## Auth check
-
-```bash
-notebooklm auth check --test
-```
-```
-
-#### Key Points Explained
-
-**1. Description Field**
-
-```yaml
-# ✅ Good (third person + trigger keywords)
-description: Manage Google NotebookLM notebooks, sources, and artifacts. Use when the user mentions NotebookLM, podcasts, generating audio/video from documents...
-
-# ❌ Avoid
-description: I can help you with NotebookLM...  # First person
-description: NotebookLM tool  # Too vague, missing trigger words
-```
-
-**2. Freedom Matching**
-
-```markdown
-# High freedom (flexible tasks)
-## Code review process
-1. Analyze the notebook sources
-2. Identify key themes
-3. Suggest content improvements
-
-# Low freedom (fragile operations)
-## Database migration
-Run exactly: `notebooklm source add-research "topic" --wait`
-Do not modify this command.
-```
-
-**3. Progressive Disclosure**
-
-```markdown
-# Keep SKILL.md concise, details in referenced files
-**Advanced features**: See [REFERENCE.md](REFERENCE.md)
-**Examples**: See [EXAMPLES.md](EXAMPLES.md)
-```
-
-#### Workflow Checklist Template
-
-For complex tasks, provide copyable checklists:
-
-```markdown
-## Podcast generation workflow
+#### Workflow Checklist
 
 Copy this checklist to track progress:
 
 ```
 Progress:
 - [ ] Step 1: Create notebook
-- [ ] Step 2: Add sources (wait for processing)
-- [ ] Step 3: Verify sources indexed
+- [ ] Step 2: Add source (wait for processing)
+- [ ] Step 3: Verify source is indexed
 - [ ] Step 4: Generate audio
 - [ ] Step 5: Download and verify
 ```
+
+#### Natural Language Instruction (Recommended)
+
+A concise single instruction for OpenClaw to plan and execute autonomously:
+
+**Basic (download locally)**:
+
+> Create a NotebookLM notebook named 'AI Agent Skills Best Practices', add this source: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices. Generate a deep-dive style podcast and download it to agent-skills-podcast.mp3
+
+**Advanced (send via Slack)**:
+
+> Create a NotebookLM notebook named 'AI Agent Skills Best Practices', add this source: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices. Generate a deep-dive style podcast and send it to me via Slack
+
+#### Equivalent CLI Commands (Manual Execution)
+
+```bash
+# Step 1: Create notebook
+notebooklm create "AI Agent Skills Best Practices"
+# Output: Created notebook: <notebook_id>
+
+# Step 2: Switch to that notebook
+notebooklm use <notebook_id>
+
+# Step 3: Add source (--wait ensures processing completes)
+notebooklm source add "https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" --wait
+
+# Step 4: Verify source status
+notebooklm source list
+# Confirm all sources show status: "completed"
+
+# Step 5: Generate podcast (--wait blocks until complete)
+notebooklm generate audio "deep-dive discussion style" --wait
+
+# Step 6: Download
+notebooklm download audio ./agent-skills-podcast.mp3
+
+# Step 7: Verify file
+ls -la ./agent-skills-podcast.mp3
 ```
 
-#### Anti-patterns to Avoid
+#### Key Points
 
-| Anti-pattern | Correct Approach |
-|:-------------|:-----------------|
-| Windows paths `scripts\helper.py` | Unix paths `scripts/helper.py` |
-| Providing too many options "You can use A, B, C..." | Provide default + escape hatch |
-| Deeply nested references A→B→C | Keep references one level deep |
-| Time-sensitive info "Before August 2025..." | Use "old patterns" collapsible sections |
+| Point | Description |
+|:------|:------------|
+| **Concise instruction** | Single sentence contains full intent, OpenClaw decomposes steps automatically |
+| **Progress verification** | `--wait` flag ensures async operations complete before continuing |
+| **Error prevention** | Verify source status before generating, avoid empty podcasts |
+| **Degrees of freedom** | Natural language = high freedom (OpenClaw decides); CLI = low freedom (precise control) |
 
 ### Example 2: Batch Generate Learning Materials
 

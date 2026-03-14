@@ -151,9 +151,12 @@ make rebuild
 | [镜像变体指南](./docs/IMAGE_VARIANTS.md) | 详解 1+3 架构与各版本差异 | `latest`, `go`, `java`, `office` 区别 |
 | [Docker 工作流](./docs/DOCKER_WORKFLOW.md) | 本地开发与 CI/CD 流程 | `make` 命令、GitHub Actions 逻辑 |
 | [快速入门指南](./docs/USER_ONBOARDING.md) | 详细的配置与环境变量说明 | `.env` 配置、Claude API 设置 |
-| [飞书配置](./docs/FEISHU_SETUP_BEGINNER.md) | 聊天应用与 AI Agent 联动 | 机器人创建、Webhook 配置 |
+| [飞书配置](./docs/FEISHU_SETUP.md) | 聊天应用与 AI Agent 联动 | 机器人创建、Webhook 配置 |
 | [Slack 配置](./docs/SLACK_SETUP_BEGINNER.md) | Slack 接入 OpenClaw | 机器人创建、Socket Mode 配置 |
+| [NotebookLM 技能](./docs/NOTEBOOKLM_SKILL.md) | NotebookLM CLI 集成指南 | 播客生成、来源管理、内容导出 |
 | [详细参考手册](./docs/REFERENCE.md) | 完整的 Makefile 命令参考 | 进阶运维指令、故障排查 |
+
+**外部资源**：[OpenClaw 官方文档](https://docs.openclaw.ai) | [Claude Code 文档](https://docs.anthropic.com/en/docs/claude-code) | [notebooklm-py GitHub](https://github.com/teng-lin/notebooklm-py)
 
 ---
 

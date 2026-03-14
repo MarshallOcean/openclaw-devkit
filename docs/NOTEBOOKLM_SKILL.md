@@ -17,14 +17,14 @@
 
 **notebooklm-py** 是 Google NotebookLM 的非官方 Python SDK 和 CLI 工具，提供：
 
-| 功能 | 说明 |
-|:-----|:-----|
-| 📓 Notebook 管理 | 创建、列表、重命名、删除 |
-| 📄 多格式来源 | URLs、YouTube、PDF、Word、音视频、Google Drive |
-| 💬 智能对话 | 基于来源的问答、自定义人设 |
-| 🔍 研究代理 | 网页/Drive 深度研究，自动导入 |
-| 🎙️ 内容生成 | 播客、视频、幻灯片、测验、思维导图等 |
-| 📥 批量导出 | MP3、MP4、PDF、PNG、CSV、JSON、Markdown |
+| 功能            | 说明                                           |
+| :-------------- | :--------------------------------------------- |
+| 📓 Notebook 管理 | 创建、列表、重命名、删除                       |
+| 📄 多格式来源    | URLs、YouTube、PDF、Word、音视频、Google Drive |
+| 💬 智能对话      | 基于来源的问答、自定义人设                     |
+| 🔍 研究代理      | 网页/Drive 深度研究，自动导入                  |
+| 🎙️ 内容生成      | 播客、视频、幻灯片、测验、思维导图等           |
+| 📥 批量导出      | MP3、MP4、PDF、PNG、CSV、JSON、Markdown        |
 
 > ⚠️ **注意**: 此工具使用未公开的 Google API，可能随时变化。适合原型开发、研究和个人项目。
 
@@ -169,140 +169,74 @@ notebooklm skill status
 
 ## 实战案例
 
-### 案例 1：OpenClaw Skill 编写最佳实践
+### 案例 1：研究 Agent Skills 最佳实践
 
-**场景**: 学习如何为 OpenClaw 编写高质量的 NotebookLM Skill，遵循官方 Agent Skills 最佳实践。
+**场景**: 使用 NotebookLM 研究 Claude Agent Skills 最佳实践，生成播客便于通勤时收听。
 
-本案例基于 [Claude Agent Skills Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) 官方指南。
+本案例演示 NotebookLM Skill 的核心用法：创建 notebook → 导入来源 → 生成内容 → 下载。
 
-#### 核心原则速查
+#### 工作流清单
 
-| 原则 | 说明 |
-|:-----|:-----|
-| **简洁优先** | 假设 OpenClaw 已具备基础能力，只补充必要上下文 |
-| **自由度匹配** | 脆弱操作 = 低自由度（精确脚本）；灵活任务 = 高自由度（文本指令） |
-| **渐进披露** | SKILL.md < 500 行，细节放入引用文件 |
-| **工作流清单** | 复杂任务使用可复制的检查清单 |
-| **有效描述** | 第三人称，包含触发关键词 |
-
-#### 推荐的 Skill 目录结构
+复制此清单跟踪进度：
 
 ```
-~/.claude/commands/notebooklm/
-├── SKILL.md              # 主文件（概览 + 快速开始）
-├── REFERENCE.md          # CLI 完整命令参考
-└── EXAMPLES.md           # 输入/输出示例
+进度：
+- [ ] Step 1: 创建 notebook
+- [ ] Step 2: 添加来源（等待处理完成）
+- [ ] Step 3: 验证来源已索引
+- [ ] Step 4: 生成音频
+- [ ] Step 5: 下载并验证
 ```
 
-#### SKILL.md 模板（遵循最佳实践）
+#### 自然语言指令（推荐）
 
-```markdown
----
-name: notebooklm
-description: Manage Google NotebookLM notebooks, sources, and artifacts. Use when the user mentions NotebookLM, podcasts, generating audio/video from documents, or asks to create learning materials from sources.
----
+一条简洁的指令让 OpenClaw 自主规划执行：
 
-# NotebookLM Skill
+**基础版（下载到本地）**：
 
-Complete API for Google NotebookLM - create notebooks, add sources, generate podcasts/videos/quizzes, and download in multiple formats.
+> 创建一个 Notebook “Agent Skills 最佳实践”，添加来源：https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+> 并生成一个深入讨论风格的播客，下载输出为 agent-skills-podcast.mp3
 
-## Quick start
+**进阶版（通过 Slack 发送）**：
 
-Create a podcast from web sources:
+> 创建一个 Notebook “Agent Skills 最佳实践”，添加来源：https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+> 生成一个深入讨论风格的播客，然后通过 Slack 发给我
+
+#### 等效 CLI 命令（手动执行）
 
 ```bash
-notebooklm create "Research Topic"
-notebooklm use <id>
-notebooklm source add "https://example.com/article" --wait
-notebooklm generate audio "engaging discussion style" --wait
-notebooklm download audio ./podcast.mp3
+# Step 1: 创建 notebook
+notebooklm create "Agent Skills 最佳实践"
+# 输出: Created notebook: <notebook_id>
+
+# Step 2: 切换到该 notebook
+notebooklm use <notebook_id>
+
+# Step 3: 添加来源（--wait 确保处理完成）
+notebooklm source add "https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" --wait
+
+# Step 4: 验证来源状态
+notebooklm source list
+# 确认所有来源状态为 "completed"
+
+# Step 5: 生成播客（--wait 阻塞直到完成）
+notebooklm generate audio "deep-dive discussion style" --wait
+
+# Step 6: 下载
+notebooklm download audio agent-skills-podcast.mp3
+
+# Step 7: 验证文件
+ls -la agent-skills-podcast.mp3
 ```
 
-## Common operations
+#### 关键要点
 
-**Add sources**: See [REFERENCE.md](REFERENCE.md#sources)
-**Generate content**: See [REFERENCE.md](REFERENCE.md#generate)
-**Examples**: See [EXAMPLES.md](EXAMPLES.md)
-
-## Content types
-
-| Type | CLI command | Output formats |
-|:-----|:------------|:---------------|
-| Audio (podcast) | `generate audio` | MP3, MP4 |
-| Video | `generate video` / `cinematic-video` | MP4 |
-| Quiz | `generate quiz` | JSON, Markdown, HTML |
-| Flashcards | `generate flashcards` | JSON, Markdown, HTML |
-
-## Auth check
-
-```bash
-notebooklm auth check --test
-```
-```
-
-#### 关键要点说明
-
-**1. 描述字段（description）**
-
-```yaml
-# ✅ 好的写法（第三人称 + 触发关键词）
-description: Manage Google NotebookLM notebooks, sources, and artifacts. Use when the user mentions NotebookLM, podcasts, generating audio/video from documents...
-
-# ❌ 避免的写法
-description: I can help you with NotebookLM...  # 第一人称
-description: NotebookLM tool  # 太模糊，缺少触发词
-```
-
-**2. 自由度匹配**
-
-```markdown
-# 高自由度（灵活任务）
-## Code review process
-1. Analyze the notebook sources
-2. Identify key themes
-3. Suggest content improvements
-
-# 低自由度（脆弱操作）
-## Database migration
-Run exactly: `notebooklm source add-research "topic" --wait`
-Do not modify this command.
-```
-
-**3. 渐进式披露**
-
-```markdown
-# SKILL.md 保持精简，细节放入引用文件
-**Advanced features**: See [REFERENCE.md](REFERENCE.md)
-**Examples**: See [EXAMPLES.md](EXAMPLES.md)
-```
-
-#### 工作流清单模板
-
-对于复杂任务，提供可复制的检查清单：
-
-```markdown
-## Podcast generation workflow
-
-Copy this checklist to track progress:
-
-```
-Progress:
-- [ ] Step 1: Create notebook
-- [ ] Step 2: Add sources (wait for processing)
-- [ ] Step 3: Verify sources indexed
-- [ ] Step 4: Generate audio
-- [ ] Step 5: Download and verify
-```
-```
-
-#### 避免的反模式
-
-| 反模式 | 正确做法 |
-|:-------|:---------|
-| Windows 路径 `scripts\helper.py` | Unix 路径 `scripts/helper.py` |
-| 提供太多选项 "可以用 A、B、C..." | 提供默认方案 + 逃生舱 |
-| 深层嵌套引用 A→B→C | 引用保持一层深度 |
-| 时间敏感信息 "2025年8月前..." | 使用 "old patterns" 折叠区 |
+| 要点         | 说明                                                         |
+| :----------- | :----------------------------------------------------------- |
+| **简洁指令** | 单句包含完整意图，OpenClaw 自动分解步骤                      |
+| **进度验证** | `--wait` 标志确保异步操作完成后再继续                        |
+| **错误预防** | 生成前验证 source 状态，避免空播客                           |
+| **自由度**   | 自然语言=高自由度（OpenClaw 决策）；CLI=低自由度（精确控制） |
 
 ### 案例 2：批量生成学习材料
 
@@ -383,17 +317,17 @@ notebooklm download mind-map ./mindmap.json
 
 ## 支持的内容类型
 
-| 类型 | 选项 | 导出格式 |
-|:-----|:-----|:---------|
-| **Audio Overview** | 4 种风格 (deep-dive/brief/critique/debate)、3 种时长、50+ 语言 | MP3/MP4 |
-| **Video Overview** | 3 种风格 (explainer/brief/cinematic)、9 种视觉风格、独立 `cinematic-video` 别名 | MP4 |
-| **Slide Deck** | 详细版/演讲版、可调长度 | PDF, PPTX |
-| **Infographic** | 3 种方向、3 种细节级别 | PNG |
-| **Quiz** | 可配置数量和难度 | JSON, Markdown, HTML |
-| **Flashcards** | 可配置数量和难度 | JSON, Markdown, HTML |
-| **Report** | 简报/学习指南/博客文章/自定义提示词 | Markdown |
-| **Data Table** | 自然语言定义结构 | CSV |
-| **Mind Map** | 交互式层级可视化 | JSON |
+| 类型               | 选项                                                                            | 导出格式             |
+| :----------------- | :------------------------------------------------------------------------------ | :------------------- |
+| **Audio Overview** | 4 种风格 (deep-dive/brief/critique/debate)、3 种时长、50+ 语言                  | MP3/MP4              |
+| **Video Overview** | 3 种风格 (explainer/brief/cinematic)、9 种视觉风格、独立 `cinematic-video` 别名 | MP4                  |
+| **Slide Deck**     | 详细版/演讲版、可调长度                                                         | PDF, PPTX            |
+| **Infographic**    | 3 种方向、3 种细节级别                                                          | PNG                  |
+| **Quiz**           | 可配置数量和难度                                                                | JSON, Markdown, HTML |
+| **Flashcards**     | 可配置数量和难度                                                                | JSON, Markdown, HTML |
+| **Report**         | 简报/学习指南/博客文章/自定义提示词                                             | Markdown             |
+| **Data Table**     | 自然语言定义结构                                                                | CSV                  |
+| **Mind Map**       | 交互式层级可视化                                                                | JSON                 |
 
 ---
 
