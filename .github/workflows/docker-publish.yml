@@ -21,6 +21,11 @@ on:
       - 'Makefile'
       - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
+    inputs:
+      force_publish:
+        description: 'Force publish even without version change'
+        required: false
+        default: 'false'
 
 env:
   REGISTRY: ghcr.io
@@ -29,7 +34,73 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # Job 1: Check upstream version and determine if publish is needed
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      has_new_version: ${{ steps.check.outputs.has_new_version }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
+      should_publish: ${{ steps.check.outputs.should_publish }}
+    steps:
+      - name: Check upstream version
+        id: check
+        run: |
+          # Get latest upstream version
+          LATEST=$(curl -fsSL "https://api.github.com/repos/openclaw/openclaw/releases/latest" | jq -r '.tag_name')
+          echo "latest_version=${LATEST}" >> $GITHUB_OUTPUT
+
+          # Get current stored version from secret
+          CURRENT="${{ secrets.OPENCLAW_VERSION }}"
+          if [ -z "$CURRENT" ]; then
+            CURRENT="v0.0.0"
+          fi
+
+          echo "Current stored version: ${CURRENT}"
+          echo "Latest upstream version: ${LATEST}"
+
+          # Determine if should publish
+          SHOULD_PUBLISH="false"
+
+          # Always publish on tag push (manual release)
+          if [[ "${{ github.ref }}" == "refs/tags/"* ]]; then
+            echo "Tag push detected - will publish"
+            SHOULD_PUBLISH="true"
+          # Publish on repository_dispatch (upstream triggered)
+          elif [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            echo "repository_dispatch triggered - will publish"
+            SHOULD_PUBLISH="true"
+          # Publish on workflow_dispatch if force is enabled
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]] && [[ "${{ github.inputs.force_publish }}" == "true" ]]; then
+            echo "workflow_dispatch with force_publish - will publish"
+            SHOULD_PUBLISH="true"
+          # Check for new version on schedule
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            if [[ "$LATEST" != "$CURRENT" ]]; then
+              echo "New version detected (${LATEST} vs ${CURRENT}) - will publish"
+              SHOULD_PUBLISH="true"
+              echo "has_new_version=true" >> $GITHUB_OUTPUT
+            else
+              echo "No new version - skipping publish"
+              echo "has_new_version=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "Build verification only (PR/push to main)"
+            echo "has_new_version=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "should_publish=${SHOULD_PUBLISH}" >> $GITHUB_OUTPUT
+
+      # Update secret after successful publish
+      - name: Update version secret after publish
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          echo "${{ steps.check.outputs.latest_version }}" | gh secret set OPENCLAW_VERSION
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 2: Prepare - fetch version info
   prepare:
+    needs: check-upstream
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -46,7 +117,8 @@ jobs:
 
   # Tier 1: Foundation
   build-base:
-    needs: prepare
+    needs: [check-upstream, prepare]
+    if: needs.check-upstream.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -66,13 +138,14 @@ jobs:
         with:
           context: .
           file: Dockerfile.base
-          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.repo_owner }}/${{ env.IMAGE_BASE }}:base
 
   # Tier 2: Stacks
   build-stacks:
-    needs: [prepare, build-base]
+    needs: [check-upstream, prepare, build-base]
+    if: needs.check-upstream.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -96,7 +169,7 @@ jobs:
           context: .
           file: Dockerfile.stacks
           target: stack-${{ matrix.stack }}
-          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          push: true
           platforms: linux/amd64,linux/arm64
           build-args: |
              BASE_IMAGE=${{ env.REGISTRY }}/${{ needs.prepare.outputs.repo_owner }}/${{ env.IMAGE_BASE }}:base
@@ -104,7 +177,8 @@ jobs:
 
   # Tier 3: Product Images
   build-products:
-    needs: [prepare, build-stacks]
+    needs: [check-upstream, prepare, build-stacks]
+    if: needs.check-upstream.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -135,7 +209,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          push: true
           platforms: linux/amd64,linux/arm64
           build-args: |
             BASE_IMAGE=${{ env.REGISTRY }}/${{ needs.prepare.outputs.repo_owner }}/${{ env.IMAGE_BASE }}:${{ matrix.stack }}
